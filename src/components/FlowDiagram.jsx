@@ -363,6 +363,7 @@ const FlowDiagram = ({ onYamlChange }) => {
                         minZoom={0.1}
                         selectionOnDrag
                         selectionMode={SelectionMode.Partial}
+                        panOnDrag={[1]}
                     >
                         <Controls />
                         <Background color="var(--border)" gap={16} />
