@@ -1,19 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
 
 const GoToExitNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
-    const [isEditing, setIsEditing] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [text, setText] = useState(data.text || '');
 
-    const handleEdit = () => setIsEditing(true);
+    useEffect(() => {
+        if (isMenuOpen) {
+            setText(data.text || '');
+        }
+    }, [isMenuOpen, data.text]);
 
     const handleSave = () => {
         setNodes(nodes => nodes.map(node =>
             node.id === id ? { ...node, data: { ...node.data, text } } : node
         ));
-        setIsEditing(false);
+        setIsMenuOpen(false);
     };
 
     const nodeStyle = {
@@ -35,22 +39,43 @@ const GoToExitNode = ({ id, data, selected }) => {
         color: 'var(--primary-foreground)',
         border: 'none',
         borderRadius: '4px',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        width: '100%'
     };
 
     return (
         <div style={nodeStyle}>
             <NodeResizer isVisible={selected} keepAspectRatio minWidth={80} minHeight={80} lineStyle={{borderColor: 'var(--ring)'}} handleStyle={{backgroundColor: 'var(--ring)'}} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)' }} />
+            
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ position: 'absolute', top: 10, right: 10, zIndex: 10, cursor: 'pointer', background: 'none', border: 'none', fontSize: '16px', color: 'var(--foreground)' }}>
+                ⋮
+            </button>
 
-            {isEditing ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 8, alignItems: 'center' }}>
+            {isMenuOpen && (
+                <div style={{
+                    position: 'absolute',
+                    top: 35,
+                    right: 10,
+                    background: 'var(--card)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    zIndex: 20,
+                    padding: 15,
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    width: 200,
+                    textAlign: 'left'
+                }}>
+                    <div style={{ fontWeight: 'bold' }}>Edit Exit</div>
                     <input
                         type="text"
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         placeholder="Exit text"
-                        style={{ padding: 4, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--foreground)', textAlign: 'center', width: '80%' }}
+                        style={{ padding: 4, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--foreground)', width: '100%', boxSizing: 'border-box' }}
                     />
                     <button
                         onClick={handleSave}
@@ -59,12 +84,12 @@ const GoToExitNode = ({ id, data, selected }) => {
                         Save
                     </button>
                 </div>
-            ) : (
-                <div onDoubleClick={handleEdit} style={{ textAlign: 'center', padding: 16 }}>
-                    <div style={{ fontWeight: 'bold' }}>Exit</div>
-                    <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{text || "Double click to edit"}</div>
-                </div>
             )}
+
+            <div style={{ textAlign: 'center', padding: 16 }}>
+                <div style={{ fontWeight: 'bold' }}>Exit</div>
+                <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{data.text || "No text"}</div>
+            </div>
         </div>
     );
 };
