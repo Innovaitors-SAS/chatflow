@@ -103,7 +103,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
 
     return (
         <div style={nodeStyle}>
-            <NodeResizer isVisible={selected} minWidth={200} minHeight={150} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
+            <NodeResizer isVisible={selected} minWidth={160} minHeight={120} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }} />
 
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ position: 'absolute', top: 5, right: 5, zIndex: 10, cursor: 'pointer', background: 'none', border: 'none', fontSize: '16px', color: 'var(--foreground)' }}>
@@ -209,4 +209,3 @@ const ConditionActionNode = ({ id, data, selected }) => {
 };
 
 export default ConditionActionNode;
-

@@ -34,7 +34,7 @@ const initialNodes = [
         type: 'start',
         position: { x: 450, y: 50 },
         data: { text: 'Workflow Start' },
-        style: { width: 100, height: 100 },
+        style: { width: 80, height: 80 },
         deletable: false,
     }
 ];
@@ -226,11 +226,11 @@ const FlowDiagram = () => {
             };
 
             if (type === 'condition') {
-                newNode.style = { width: 200, height: 120 };
+                newNode.style = { width: 160, height: 96 };
             } else if (type === 'decision') {
-                newNode.style = { width: 140, height: 140 };
+                newNode.style = { width: 112, height: 112 };
             } else if (type === 'exit') {
-                newNode.style = { width: 120, height: 120 };
+                newNode.style = { width: 96, height: 96 };
             }
 
             setNodes((nds) => nds.concat(newNode));
@@ -255,6 +255,7 @@ const FlowDiagram = () => {
                         nodeTypes={nodeTypes}
                         edgeTypes={edgeTypes}
                         fitView
+                        minZoom={0.1}
                     >
                         <Controls />
                         <Background color="var(--border)" gap={16} />

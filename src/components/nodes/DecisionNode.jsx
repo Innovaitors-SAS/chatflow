@@ -74,7 +74,7 @@ const DecisionNode = ({ id, data, selected }) => {
                     </div>
                 </div>
             )}
-            <NodeResizer isVisible={selected} keepAspectRatio minWidth={100} minHeight={100} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
+            <NodeResizer isVisible={selected} keepAspectRatio minWidth={80} minHeight={80} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }}/>
 
             <div style={{ transform: 'rotate(-45deg)', position: 'absolute', top: 5, right: 5, zIndex: 10 }}>
@@ -170,4 +170,3 @@ const DecisionNode = ({ id, data, selected }) => {
 };
 
 export default DecisionNode;
-

@@ -20,15 +20,15 @@ function Sidebar() {
 
     const conditionStyle = {
         ...nodeBaseStyle,
-        width: 120,
-        height: 60,
+        width: 96,
+        height: 48,
         borderRadius: 'var(--radius)',
     };
 
     const decisionStyle = {
         ...nodeBaseStyle,
-        width: 90,
-        height: 90,
+        width: 72,
+        height: 72,
         transform: 'rotate(45deg)',
     };
 
@@ -38,8 +38,8 @@ function Sidebar() {
 
     const exitStyle = {
         ...nodeBaseStyle,
-        width: 80,
-        height: 80,
+        width: 64,
+        height: 64,
         borderRadius: '50%',
     };
 
@@ -86,4 +86,3 @@ function Sidebar() {
 }
 
 export default Sidebar;
-
