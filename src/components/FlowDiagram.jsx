@@ -120,31 +120,62 @@ const FlowDiagram = () => {
         );
     }, [nodes, edges, setNodes, setEdges]);
 
+    useEffect(() => {
+        const edgeCounts = edges.reduce((acc, edge) => {
+            if (edge.source) {
+                acc[edge.source] = (acc[edge.source] || 0) + 1;
+            }
+            return acc;
+        }, {});
+    
+        let nodesChanged = false;
+        const newNodes = nodes.map(node => {
+            if (node.type === 'decision') {
+                const outEdgeCount = edgeCounts[node.id] || 0;
+                const optionsCount = node.data.options?.length || 0;
+                const hasWarning = outEdgeCount < optionsCount;
+    
+                if ((node.data.hasWarning || false) !== hasWarning) {
+                    nodesChanged = true;
+                    return { ...node, data: { ...node.data, hasWarning } };
+                }
+            }
+            return node;
+        });
+    
+        if (nodesChanged) {
+            setNodes(newNodes);
+        }
+    }, [edges, nodes, setNodes]);
+
     const onConnect = useCallback(
         (params) => {
-            const { source, sourceHandle } = params;
-            const sourceNode = nodes.find((node) => node.id === source);
-            let edgeLabel = '';
+            const sourceNode = nodes.find((node) => node.id === params.source);
 
-            if (sourceNode?.type === 'decision' && sourceHandle) {
-                const optionIndex = parseInt(sourceHandle.split('-')[1], 10);
-                if (
-                    sourceNode.data.options &&
-                    !isNaN(optionIndex) &&
-                    sourceNode.data.options[optionIndex]
-                ) {
-                    edgeLabel = sourceNode.data.options[optionIndex];
+            if (sourceNode?.type === 'decision') {
+                const outgoingEdges = edges.filter(e => e.source === params.source);
+                const optionIndex = outgoingEdges.length;
+
+                if (sourceNode.data.options && optionIndex < sourceNode.data.options.length) {
+                    const edgeLabel = sourceNode.data.options[optionIndex];
+                    setEdges((eds) => addEdge({
+                        ...params,
+                        type: 'custom',
+                        data: { label: edgeLabel },
+                        markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }
+                    }, eds));
                 }
+                return;
             }
 
             setEdges((eds) => addEdge({
                 ...params,
                 type: 'custom',
-                data: { label: edgeLabel },
+                data: { label: '' },
                 markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }
             }, eds));
         },
-        [setEdges, nodes]
+        [nodes, edges, setEdges]
     );
 
     const onDragOver = useCallback((event) => {

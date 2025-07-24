@@ -40,8 +40,40 @@ const DecisionNode = ({ id, data, selected }) => {
                 opacity: data.isDimmed ? 0.3 : 1,
                 transition: 'opacity 0.2s',
                 pointerEvents: data.isDimmed ? 'none' : 'auto',
+                position: 'relative'
             }}
         >
+            {data.hasWarning && (
+                <div
+                    title="Not all options are connected"
+                    style={{
+                        position: 'absolute',
+                        top: '15%',
+                        left: '15%',
+                        transform: 'translate(-50%, -50%) rotate(-45deg)',
+                        zIndex: 10,
+                        width: 24,
+                        height: 24,
+                        cursor: 'help'
+                    }}
+                >
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        background: 'black',
+                        color: 'yellow',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 16,
+                        fontWeight: 'bold',
+                        boxShadow: '0 0 5px rgba(0,0,0,0.5)',
+                    }}>
+                        !
+                    </div>
+                </div>
+            )}
             <NodeResizer isVisible={selected} keepAspectRatio minWidth={100} minHeight={100} lineStyle={{borderColor: 'var(--ring)'}} handleStyle={{backgroundColor: 'var(--ring)'}} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)' }}/>
 
@@ -127,20 +159,12 @@ const DecisionNode = ({ id, data, selected }) => {
                 </div>
             </div>
 
-            {(data.options || []).map((option, index) => (
-                <Handle
-                    key={index}
-                    type="source"
-                    position={Position.Bottom}
-                    id={`option-${index}`}
-                    style={{
-                        left: `${(index + 1) * (100 / ((data.options || []).length + 1))}%`,
-                        background: 'var(--foreground)',
-                        width: 8,
-                        height: 8
-                    }}
-                />
-            ))}
+            <Handle
+                type="source"
+                position={Position.Bottom}
+                id="source"
+                style={{ background: 'var(--foreground)' }}
+            />
         </div>
     );
 };
