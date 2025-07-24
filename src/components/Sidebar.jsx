@@ -1,4 +1,4 @@
-function Sidebar() {
+function Sidebar({ yaml }) {
     const onDragStart = (event, nodeType) => {
         event.dataTransfer.setData('application/reactflow', nodeType);
         event.dataTransfer.effectAllowed = 'move';
@@ -45,12 +45,13 @@ function Sidebar() {
 
     return (
         <div style={{
-            width: 250,
+            width: 300,
             background: 'var(--secondary)',
             padding: 15,
             borderLeft: '1px solid var(--border)',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            overflow: 'hidden'
         }}>
             <h3 style={{
                 textAlign: 'center',
@@ -81,6 +82,33 @@ function Sidebar() {
             >
                 Exit
             </div>
+            <h3 style={{
+                textAlign: 'center',
+                margin: '30px 0 10px',
+                color: 'var(--muted-foreground)',
+                fontWeight: '600'
+            }}>
+                YAML Output
+            </h3>
+            <textarea
+                readOnly
+                value={yaml || ''}
+                placeholder="Flow YAML will appear here..."
+                style={{
+                    flexGrow: 1,
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    background: 'var(--card)',
+                    color: 'var(--foreground)',
+                    padding: '8px',
+                    fontFamily: 'monospace',
+                    fontSize: '12px',
+                    resize: 'none',
+                    minHeight: 150
+                }}
+            />
         </div>
     );
 }

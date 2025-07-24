@@ -39,7 +39,99 @@ const initialNodes = [
     }
 ];
 
-const FlowDiagram = () => {
+function generateYaml(nodes, edges, flowTitle) {
+    if (!nodes || nodes.length === 0) return '';
+
+    const nodesMap = new Map(nodes.map(n => [n.id, n]));
+    const edgesBySource = edges.reduce((acc, edge) => {
+        if (!acc[edge.source]) acc[edge.source] = [];
+        acc[edge.source].push(edge);
+        return acc;
+    }, {});
+    const edgesByTarget = edges.reduce((acc, edge) => {
+        if (!acc[edge.target]) acc[edge.target] = [];
+        acc[edge.target].push(edge);
+        return acc;
+    }, {});
+
+    const startNode = nodes.find(n => n.type === 'start');
+    const alarmCode = startNode?.data?.text?.match(/\b(\d{4})\b/)?.[1] || 'XXXX';
+
+    let yaml = `graph:\n`;
+    yaml += `  id: "graph_alarm_${alarmCode}"\n`;
+    yaml += `  description: "${flowTitle || ''}"\n\n`;
+    yaml += `  nodes:\n`;
+
+    const yamlNodeObjects = [];
+    const processedNodeIds = new Set();
+
+    for (const node of nodes) {
+        if (processedNodeIds.has(node.id)) {
+            continue;
+        }
+
+        let yamlNodeObject;
+
+        if (node.type === 'decision') {
+            const incomingEdge = (edgesByTarget[node.id] || [])[0];
+            const predecessor = incomingEdge ? nodesMap.get(incomingEdge.source) : null;
+
+            if (predecessor && predecessor.type === 'condition') {
+                const decision = {
+                    condition: predecessor.data.condition || '',
+                };
+
+                const outgoingEdges = edgesBySource[node.id] || [];
+                for (const edge of outgoingEdges) {
+                    const label = (edge.data?.label || 'option').toLowerCase().replace(/ /g, '_');
+                    decision[label] = edge.target;
+                }
+
+                yamlNodeObject = {
+                    id: predecessor.id,
+                    text: predecessor.data.text || '',
+                    decision: decision
+                };
+
+                processedNodeIds.add(predecessor.id);
+                processedNodeIds.add(node.id);
+            }
+        }
+
+        if (!yamlNodeObject) {
+            yamlNodeObject = {
+                id: node.id,
+                text: node.data.text || '',
+            };
+            processedNodeIds.add(node.id);
+        }
+
+        yamlNodeObjects.push(yamlNodeObject);
+    }
+
+    for (const ymlNode of yamlNodeObjects) {
+        yaml += `    - id: "${ymlNode.id}"\n`;
+        const text = (ymlNode.text || '').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+        if (text) {
+             yaml += `      text: "${text}"\n`;
+        }
+
+        if (ymlNode.decision) {
+            yaml += `      decision:\n`;
+            const condition = (ymlNode.decision.condition || '').replace(/"/g, '\\"');
+            yaml += `        condition: "${condition}"\n`;
+            for (const key of Object.keys(ymlNode.decision)) {
+                if (key !== 'condition') {
+                    yaml += `        ${key}: "${ymlNode.decision[key]}"\n`;
+                }
+            }
+        }
+    }
+
+    return yaml;
+}
+
+const FlowDiagram = ({ onYamlChange }) => {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -47,6 +139,13 @@ const FlowDiagram = () => {
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const selectedNodeIds = useRef(new Set());
     const [menu, setMenu] = useState(null);
+
+    useEffect(() => {
+        if (onYamlChange) {
+            const yamlString = generateYaml(nodes, edges, flowTitle);
+            onYamlChange(yamlString);
+        }
+    }, [nodes, edges, flowTitle, onYamlChange]);
 
     useEffect(() => {
         const currentSelectedNodes = nodes.filter(n => n.selected);
@@ -240,7 +339,7 @@ const FlowDiagram = () => {
     );
 
     return (
-        <div style={{ height: '100vh', width: '100vw' }}>
+        <div style={{ height: '100%', width: '100%' }}>
             <ReactFlowProvider>
                 <div style={{ height: '100%', width: '100%' }}>
                     <ReactFlow
