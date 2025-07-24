@@ -36,7 +36,7 @@ const initialNodes = [
         type: 'start',
         position: { x: 450, y: 50 },
         data: { text: 'Workflow Start' },
-        style: { width: 140, height: 70 },
+        style: { width: 100, height: 100 },
         deletable: false,
     }
 ];
@@ -46,6 +46,8 @@ const FlowDiagram = () => {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
+    const [flowTitle, setFlowTitle] = useState('Flow Builder');
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
     const selectedNodeIds = useRef(new Set());
 
     useEffect(() => {
@@ -56,11 +58,7 @@ const FlowDiagram = () => {
             selectedNodeIds.current.size !== currentSelectedNodeIds.size ||
             
 
-
-
 ![...selectedNodeIds.current].every(id => currentSelectedNodeIds.has(id)
-
-
 
 )
         );
@@ -224,6 +222,19 @@ const FlowDiagram = () => {
         [reactFlowInstance, setNodes]
     );
 
+    const nodeClassName = (node) => {
+        switch (node.type) {
+            case 'start':
+                return 'minimap-start-node';
+            case 'decision':
+                return 'minimap-decision-node';
+            case 'exit':
+                return 'minimap-exit-node';
+            default:
+                return '';
+        }
+    };
+
     return (
         <div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
             <ReactFlowProvider>
@@ -242,17 +253,44 @@ const FlowDiagram = () => {
                         fitView
                     >
                         <Controls />
-                        <MiniMap nodeColor="#f4f4f5" nodeStrokeWidth={3} />
+                        <MiniMap nodeColor="#f4f4f5" nodeStrokeWidth={3} nodeClassName={nodeClassName} />
                         <Background color="var(--border)" gap={16} />
                         <Panel position="top-right" style={{
                             background: 'var(--secondary)',
                             color: 'var(--foreground)',
-                            padding: '5px 15px',
+                            padding: '10px 15px',
                             borderRadius: 'var(--radius)',
                             border: '1px solid var(--border)',
                             boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)'
                         }}>
-                            <h3>Flow Builder</h3>
+                             {isEditingTitle ? (
+                                <input
+                                    value={flowTitle}
+                                    onChange={(e) => setFlowTitle(e.target.value)}
+                                    onBlur={() => setIsEditingTitle(false)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') setIsEditingTitle(false);
+                                    }}
+                                    autoFocus
+                                    style={{
+                                        fontSize: '1.17em',
+                                        fontWeight: 'bold',
+                                        border: 'none',
+                                        background: 'transparent',
+                                        color: 'var(--foreground)',
+                                        borderBottom: '1px solid var(--foreground)',
+                                        outline: 'none',
+                                    }}
+                                />
+                            ) : (
+                                <h3
+                                    onDoubleClick={() => setIsEditingTitle(true)}
+                                    title="Double-click to edit title"
+                                    style={{ margin: 0, cursor: 'pointer' }}
+                                >
+                                    {flowTitle}
+                                </h3>
+                            )}
                         </Panel>
                     </ReactFlow>
                 </div>
@@ -263,3 +301,4 @@ const FlowDiagram = () => {
 };
 
 export default FlowDiagram;
+

@@ -4,17 +4,43 @@ function Sidebar() {
         event.dataTransfer.effectAllowed = 'move';
     };
 
-    const nodeStyle = {
-        padding: '10px 15px',
-        margin: '10px 0',
-        background: 'var(--background)',
-        borderRadius: 'var(--radius)',
+    const nodeBaseStyle = {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        margin: '15px auto',
         cursor: 'grab',
-        border: '1px solid var(--border)',
         color: 'var(--foreground)',
-        textAlign: 'center',
         fontWeight: 500,
-        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)'
+        border: '3px solid var(--border)',
+        boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+        transition: 'all 0.2s',
+        background: 'rgba(244, 244, 245, 0.7)', // --secondary with transparency
+    };
+
+    const conditionStyle = {
+        ...nodeBaseStyle,
+        width: 120,
+        height: 60,
+        borderRadius: 'var(--radius)',
+    };
+
+    const decisionStyle = {
+        ...nodeBaseStyle,
+        width: 90,
+        height: 90,
+        transform: 'rotate(45deg)',
+    };
+
+    const decisionTextStyle = {
+        transform: 'rotate(-45deg)',
+    };
+
+    const exitStyle = {
+        ...nodeBaseStyle,
+        width: 80,
+        height: 80,
+        borderRadius: '50%',
     };
 
     return (
@@ -37,21 +63,21 @@ function Sidebar() {
             <div
                 onDragStart={(event) => onDragStart(event, 'condition')}
                 draggable
-                style={nodeStyle}
+                style={conditionStyle}
             >
                 Condition
             </div>
             <div
                 onDragStart={(event) => onDragStart(event, 'decision')}
                 draggable
-                style={nodeStyle}
+                style={decisionStyle}
             >
-                Decision
+                <div style={decisionTextStyle}>Decision</div>
             </div>
             <div
                 onDragStart={(event) => onDragStart(event, 'exit')}
                 draggable
-                style={nodeStyle}
+                style={exitStyle}
             >
                 Exit
             </div>
@@ -60,3 +86,4 @@ function Sidebar() {
 }
 
 export default Sidebar;
+

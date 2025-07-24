@@ -10,3 +10,15 @@
     stroke-dashoffset: -14;
   }
 }
+
+/* Minimap node styles */
+.react-flow__minimap-node.minimap-start-node,
+.react-flow__minimap-node.minimap-exit-node {
+    rx: 100px;
+}
+
+.react-flow__minimap-node.minimap-decision-node {
+    transform-origin: center;
+    transform: rotate(45deg);
+}
+
