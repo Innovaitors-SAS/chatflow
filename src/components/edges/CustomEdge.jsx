@@ -34,10 +34,12 @@ const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, ta
             <path
                 id={id}
                 d={edgePath}
+                className="animated-edge"
                 style={{
                     stroke: 'var(--foreground)',
                     strokeWidth: selected ? 2 : 1.5,
-                    fill: 'none'
+                    fill: 'none',
+                    strokeDasharray: '5 5'
                 }}
                 markerEnd={markerEnd}
             />
