@@ -1,10 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { getSmoothStepPath, useReactFlow } from 'reactflow';
 
-const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, data, selected, markerEnd }) => {
+const CustomEdge = ({ id, source, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, data, selected, markerEnd }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [label, setLabel] = useState(data.label || '');
-    const { setEdges } = useReactFlow();
+    const { setEdges, getNode } = useReactFlow();
+
+    const sourceNode = getNode(source);
+    const isDecisionEdge = sourceNode?.type === 'decision';
+
+    useEffect(() => {
+        setLabel(data.label || '');
+    }, [data.label]);
 
     const [edgePath, labelX, labelY] = getSmoothStepPath({
         sourceX,
@@ -56,7 +63,7 @@ const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, ta
                 style={{ pointerEvents: 'none', opacity: data.isDimmed ? 0.3 : 1, transition: 'opacity 0.2s' }}
             >
                 <div
-                    onDoubleClick={() => setIsEditing(true)}
+                    onDoubleClick={() => !isDecisionEdge && setIsEditing(true)}
                     style={{
                         pointerEvents: data.isDimmed ? 'none' : 'all',
                         position: 'relative',
@@ -67,7 +74,7 @@ const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, ta
                         alignItems: 'center',
                         color: 'var(--foreground)'
                     }}>
-                    {isEditing ? (
+                    {isEditing && !isDecisionEdge ? (
                         <div style={{
                             display: 'flex',
                             background: 'var(--background)',
@@ -113,13 +120,13 @@ const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, ta
                                     borderRadius: 4,
                                     border: '1px solid var(--border)',
                                     fontSize: 12,
-                                    cursor: 'pointer',
+                                    cursor: isDecisionEdge ? 'default' : 'pointer',
                                     textAlign: 'center'
                                 }}
                             >
                                 {label}
                             </div>
-                        ) : (selected && <div style={{
+                        ) : (selected && !isDecisionEdge && <div style={{
                                 background: 'var(--secondary)',
                                 padding: '2px 4px',
                                 borderRadius: 4,

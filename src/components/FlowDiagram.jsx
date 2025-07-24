@@ -52,14 +52,18 @@ const FlowDiagram = () => {
         const currentSelectedNodes = nodes.filter(n => n.selected);
         const currentSelectedNodeIds = new Set(currentSelectedNodes.map(n => n.id));
 
-        const hasSelectionChanged =
-            selectedNodeIds.current.size !== currentSelectedNodeIds.size ||
-
-
-            ![...selectedNodeIds.current].every((id) => currentSelectedNodeIds.has(id));
-
-        if (!hasSelectionChanged) {
-            return;
+        const oldIds = selectedNodeIds.current;
+        if (oldIds.size === currentSelectedNodeIds.size) {
+            let areEqual = true;
+            for (const id of oldIds) {
+                if (!currentSelectedNodeIds.has(id)) {
+                    areEqual = false;
+                    break;
+                }
+            }
+            if (areEqual) {
+                return;
+            }
         }
 
         selectedNodeIds.current = currentSelectedNodeIds;
@@ -118,9 +122,12 @@ const FlowDiagram = () => {
     }, [nodes, edges, setNodes, setEdges]);
 
     useEffect(() => {
-        const edgeCounts = edges.reduce((acc, edge) => {
+        const edgesBySource = edges.reduce((acc, edge) => {
             if (edge.source) {
-                acc[edge.source] = (acc[edge.source] || 0) + 1;
+                if (!acc[edge.source]) {
+                    acc[edge.source] = [];
+                }
+                acc[edge.source].push(edge);
             }
             return acc;
         }, {});
@@ -128,9 +135,19 @@ const FlowDiagram = () => {
         let nodesChanged = false;
         const newNodes = nodes.map(node => {
             if (node.type === 'decision') {
-                const outEdgeCount = edgeCounts[node.id] || 0;
-                const optionsCount = node.data.options?.length || 0;
-                const hasWarning = outEdgeCount < optionsCount;
+                const outgoingEdges = edgesBySource[node.id] || [];
+                const nodeOptions = new Set(node.data.options || []);
+                
+                let hasWarning = outgoingEdges.length < nodeOptions.size;
+
+                if (!hasWarning) {
+                    for (const edge of outgoingEdges) {
+                        if (!nodeOptions.has(edge.data?.label)) {
+                            hasWarning = true;
+                            break;
+                        }
+                    }
+                }
 
                 if ((node.data.hasWarning || false) !== hasWarning) {
                     nodesChanged = true;
@@ -151,14 +168,16 @@ const FlowDiagram = () => {
 
             if (sourceNode?.type === 'decision') {
                 const outgoingEdges = edges.filter(e => e.source === params.source);
-                const optionIndex = outgoingEdges.length;
+                const usedLabels = new Set(outgoingEdges.map(e => e.data?.label));
+                const options = sourceNode.data.options || [];
 
-                if (sourceNode.data.options && optionIndex < sourceNode.data.options.length) {
-                    const edgeLabel = sourceNode.data.options[optionIndex];
+                const availableOption = options.find(option => !usedLabels.has(option));
+
+                if (availableOption) {
                     setEdges((eds) => addEdge({
                         ...params,
                         type: 'custom',
-                        data: { label: edgeLabel },
+                        data: { label: availableOption },
                         markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }
                     }, eds));
                 }
