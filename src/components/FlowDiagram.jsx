@@ -12,6 +12,7 @@ import ReactFlow, {
     useNodesState
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import { v4 as uuidv4 } from 'uuid';
 import CustomEdge from './edges/CustomEdge';
 import ConditionActionNode from './nodes/ConditionActionNode';
 import DecisionNode from './nodes/DecisionNode';
@@ -137,7 +138,181 @@ function generateYaml(nodes, edges) {
     return yaml;
 }
 
-const FlowDiagram = ({ onYamlChange }) => {
+const getLayoutedElements = (nodes, edges) => {
+    if (nodes.length === 0) {
+        return { nodes, edges };
+    }
+    const nodeMap = new Map(nodes.map(n => [n.id, n]));
+    const adj = new Map(nodes.map(n => [n.id, []]));
+    const inDegree = new Map(nodes.map(n => [n.id, 0]));
+
+    for (const edge of edges) {
+        if (adj.has(edge.source)) {
+            adj.get(edge.source).push(edge.target);
+        }
+        inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1);
+    }
+    
+    const queue = nodes.filter(n => (inDegree.get(n.id) || 0) === 0).map(n => n.id);
+    const layers = [];
+    
+    while(queue.length > 0) {
+        const layerSize = queue.length;
+        const currentLayer = [];
+        for(let i = 0; i < layerSize; i++) {
+            const u = queue.shift();
+            currentLayer.push(u);
+            for (const v of (adj.get(u) || [])) {
+                inDegree.set(v, inDegree.get(v) - 1);
+                if (inDegree.get(v) === 0) {
+                    queue.push(v);
+                }
+            }
+        }
+        layers.push(currentLayer);
+    }
+
+    const xSpacing = 250;
+    const ySpacing = 200;
+    let layoutedNodes = [];
+
+    layers.forEach((layer, layerIndex) => {
+        const layerWidth = (layer.length - 1) * xSpacing;
+        const startX = -layerWidth / 2;
+        layer.forEach((nodeId, nodeIndex) => {
+            const node = nodeMap.get(nodeId);
+            if (node) {
+                layoutedNodes.push({
+                    ...node,
+                    position: {
+                        x: startX + nodeIndex * xSpacing,
+                        y: layerIndex * ySpacing
+                    }
+                });
+            }
+        });
+    });
+
+    const nodesInLayers = new Set(layoutedNodes.map(n => n.id));
+    nodes.forEach(node => {
+        if (!nodesInLayers.has(node.id)) {
+            layoutedNodes.push({ ...node, position: { x: Math.random() * 400, y: Math.random() * 400 }});
+        }
+    });
+    
+    const startNodePos = layoutedNodes.find(n => n.type === 'start')?.position || { x: 0, y: 0 };
+    const offsetX = 450 - startNodePos.x;
+    const offsetY = 50 - startNodePos.y;
+
+    const finalNodes = layoutedNodes.map(n => ({
+        ...n,
+        position: {
+            x: n.position.x + offsetX,
+            y: n.position.y + offsetY
+        }
+    }));
+    
+    return { nodes: finalNodes, edges };
+}
+
+const generateFlowFromYaml = (yamlData) => {
+    if (!yamlData?.graph?.nodes) {
+        return { nodes: initialNodes, edges: [] };
+    }
+    const { graph } = yamlData;
+    const yamlNodes = graph.nodes;
+    const yamlNodeMap = new Map(yamlNodes.map(n => [n.id, n]));
+
+    let flowNodes = [];
+    let flowEdges = [];
+    const flowNodeMap = new Map();
+    const exitNodeMap = new Map();
+
+    const startNode = {
+        id: 'start-node-1',
+        type: 'start',
+        data: { text: `Alarm ${graph.description}` || 'Workflow Start' },
+        style: { width: 80, height: 80 },
+        deletable: false,
+    };
+    flowNodes.push(startNode);
+
+    for (const yamlNode of yamlNodes) {
+        const flowNodeId = `${yamlNode.id.replace('node_', 'condition-')}-${uuidv4().substring(0,4)}`;
+        const nodeData = { text: yamlNode.text || '', action: 'none', file: null };
+
+        if (yamlNode.action) {
+            if (yamlNode.action === 'create_ticket_in_db') nodeData.action = 'Create Ticket';
+            else if (yamlNode.action.startsWith('Enviar archivo ')) {
+                nodeData.action = 'Send File';
+                nodeData.file = { name: yamlNode.action.substring('Enviar archivo '.length), type: '', size: 0 };
+            }
+        }
+        if (yamlNode.decision) nodeData.condition = yamlNode.decision.condition || '';
+
+        const flowNode = { id: flowNodeId, type: 'condition', data: nodeData, style: { width: 160, height: 96 } };
+        flowNodes.push(flowNode);
+        flowNodeMap.set(yamlNode.id, flowNode);
+
+        if (yamlNode.decision) {
+            const decisionOptions = Object.keys(yamlNode.decision).filter(k => k !== 'condition').map(o => o.replace(/_/g, ' '));
+            const decisionNodeId = `${yamlNode.id.replace('node_', 'decision-')}-${uuidv4().substring(0,4)}`;
+            const decisionNode = { id: decisionNodeId, type: 'decision', data: { options: decisionOptions }, style: { width: 112, height: 112 } };
+            flowNodes.push(decisionNode);
+            flowNode.decisionNodeId = decisionNodeId;
+        }
+    }
+
+    const allTargets = new Set();
+    yamlNodes.forEach(node => {
+        if (node.next && node.next !== 'End') allTargets.add(node.next);
+        if (node.decision) Object.entries(node.decision).forEach(([k, v]) => k !== 'condition' && v !== 'End' && allTargets.add(v));
+    });
+    const entryYamlNode = yamlNodes.find(n => !allTargets.has(n.id)) || yamlNodes[0];
+
+    if (entryYamlNode) {
+        const entryFlowNode = flowNodeMap.get(entryYamlNode.id);
+        flowEdges.push({ id: `e-${startNode.id}-${entryFlowNode.id}`, source: startNode.id, target: entryFlowNode.id, type: 'custom', data: { label: '' }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' } });
+    }
+
+    for (const yamlNode of yamlNodes) {
+        const sourceFlowNode = flowNodeMap.get(yamlNode.id);
+        const createEdge = (target, label) => {
+            const edge = { id: `e-${label ? `${sourceFlowNode.id}-${label}` : sourceFlowNode.id}-${target.id}`, source: sourceFlowNode.id, target: target.id, type: 'custom', data: { label: label || '' }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' } };
+            return edge;
+        }
+        
+        const getExitNode = (key = 'default') => {
+            if (!exitNodeMap.has(key)) {
+                const exitNodeId = `exit-${key}-${uuidv4().substring(0,4)}`;
+                const exitNode = { id: exitNodeId, type: 'exit', data: { text: 'Workflow End' }, style: { width: 96, height: 96 } };
+                flowNodes.push(exitNode);
+                exitNodeMap.set(key, exitNode);
+            }
+            return exitNodeMap.get(key);
+        }
+
+        if (yamlNode.next) {
+            const target = yamlNode.next === 'End' ? getExitNode() : flowNodeMap.get(yamlNode.next);
+            flowEdges.push(createEdge(target));
+        } else if (yamlNode.decision) {
+            const decisionFlowNode = flowNodes.find(n => n.id === sourceFlowNode.decisionNodeId);
+            flowEdges.push({ id: `e-${sourceFlowNode.id}-${decisionFlowNode.id}`, source: sourceFlowNode.id, target: decisionFlowNode.id, type: 'custom', data: { label: '' }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }});
+
+            Object.entries(yamlNode.decision).forEach(([key, value]) => {
+                if (key === 'condition') return;
+                const label = key.replace(/_/g, ' ');
+                const target = value === 'End' ? getExitNode(key) : flowNodeMap.get(value);
+                flowEdges.push({ id: `e-${decisionFlowNode.id}-${target.id}-${key}`, source: decisionFlowNode.id, target: target.id, type: 'custom', data: { label }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }});
+            });
+        }
+    }
+    
+    return getLayoutedElements(flowNodes, flowEdges);
+};
+
+
+const FlowDiagram = ({ onYamlChange, initialData }) => {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -145,6 +320,17 @@ const FlowDiagram = ({ onYamlChange }) => {
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const selectedNodeIds = useRef(new Set());
     const [menu, setMenu] = useState(null);
+
+    useEffect(() => {
+        if (initialData) {
+            const { nodes: newNodes, edges: newEdges } = generateFlowFromYaml(initialData);
+            setNodes(newNodes);
+            setEdges(newEdges);
+            if (initialData.graph?.description) {
+                setFlowTitle(`Flow for Alarm ${initialData.graph.description}`);
+            }
+        }
+    }, [initialData, setNodes, setEdges]);
 
     useEffect(() => {
         if (onYamlChange) {
