@@ -39,7 +39,7 @@ const initialNodes = [
     }
 ];
 
-function generateYaml(nodes, edges, flowTitle) {
+function generateYaml(nodes, edges) {
     if (!nodes || nodes.length === 0) return '';
 
     const nodesMap = new Map(nodes.map(n => [n.id, n]));
@@ -48,84 +48,89 @@ function generateYaml(nodes, edges, flowTitle) {
         acc[edge.source].push(edge);
         return acc;
     }, {});
-    const edgesByTarget = edges.reduce((acc, edge) => {
-        if (!acc[edge.target]) acc[edge.target] = [];
-        acc[edge.target].push(edge);
-        return acc;
-    }, {});
 
     const startNode = nodes.find(n => n.type === 'start');
     const alarmCode = startNode?.data?.text?.match(/\b(\d{4})\b/)?.[1] || 'XXXX';
 
     let yaml = `graph:\n`;
     yaml += `  id: "graph_alarm_${alarmCode}"\n`;
-    yaml += `  description: "${flowTitle || ''}"\n\n`;
+    yaml += `  description: "${alarmCode}"\n\n`;
     yaml += `  nodes:\n`;
 
-    const yamlNodeObjects = [];
-    const processedNodeIds = new Set();
+    const nodeIdMap = new Map();
+    let nodeCounter = 1;
+    nodes.forEach(node => {
+        if (node.type !== 'start' && node.type !== 'exit') {
+            nodeIdMap.set(node.id, `node_${nodeCounter++}`);
+        }
+    });
 
-    for (const node of nodes) {
+    const processedNodeIds = new Set();
+    const yamlNodes = nodes.filter(node => node.type !== 'start' && node.type !== 'exit');
+
+    for (const node of yamlNodes) {
         if (processedNodeIds.has(node.id)) {
             continue;
         }
 
-        let yamlNodeObject;
-
         if (node.type === 'decision') {
-            const incomingEdge = (edgesByTarget[node.id] || [])[0];
-            const predecessor = incomingEdge ? nodesMap.get(incomingEdge.source) : null;
-
-            if (predecessor && predecessor.type === 'condition') {
-                const decision = {
-                    condition: predecessor.data.condition || '',
-                };
-
-                const outgoingEdges = edgesBySource[node.id] || [];
-                for (const edge of outgoingEdges) {
-                    const label = (edge.data?.label || 'option').toLowerCase().replace(/ /g, '_');
-                    decision[label] = edge.target;
-                }
-
-                yamlNodeObject = {
-                    id: predecessor.id,
-                    text: predecessor.data.text || '',
-                    decision: decision
-                };
-
-                processedNodeIds.add(predecessor.id);
-                processedNodeIds.add(node.id);
-            }
+            continue;
         }
 
-        if (!yamlNodeObject) {
-            yamlNodeObject = {
-                id: node.id,
-                text: node.data.text || '',
-            };
-            processedNodeIds.add(node.id);
-        }
-
-        yamlNodeObjects.push(yamlNodeObject);
-    }
-
-    for (const ymlNode of yamlNodeObjects) {
-        yaml += `    - id: "${ymlNode.id}"\n`;
-        const text = (ymlNode.text || '').replace(/"/g, '\\"').replace(/\n/g, '\\n');
+        yaml += `    - id: "${nodeIdMap.get(node.id)}"\n`;
+        const text = (node.data.text || '').replace(/"/g, '\\"').replace(/\n/g, '\\n');
         if (text) {
-             yaml += `      text: "${text}"\n`;
+            yaml += `      text: "${text}"\n`;
         }
 
-        if (ymlNode.decision) {
-            yaml += `      decision:\n`;
-            const condition = (ymlNode.decision.condition || '').replace(/"/g, '\\"');
-            yaml += `        condition: "${condition}"\n`;
-            for (const key of Object.keys(ymlNode.decision)) {
-                if (key !== 'condition') {
-                    yaml += `        ${key}: "${ymlNode.decision[key]}"\n`;
+        if (node.type === 'condition') {
+            if (node.data.action && node.data.action !== 'none') {
+                let actionString;
+                if (node.data.action === 'Create Ticket') {
+                    actionString = 'create_ticket_in_db';
+                } else if (node.data.action === 'Send File' && node.data.file?.name) {
+                    actionString = `Enviar archivo ${node.data.file.name}`;
+                }
+
+                if (actionString) {
+                    yaml += `      action: "${actionString}"\n`;
                 }
             }
         }
+
+        const outgoingEdges = edgesBySource[node.id] || [];
+        if (outgoingEdges.length > 0) {
+            const nextNode = nodesMap.get(outgoingEdges[0].target);
+            if (nextNode) {
+                if (nextNode.type === 'exit') {
+                    yaml += `      next: "End"\n`;
+                } else if (nextNode.type === 'decision') {
+                    yaml += `      decision:\n`;
+                    const condition = (node.data.condition || '').replace(/"/g, '\\"');
+                    yaml += `        condition: "${condition}"\n`;
+
+                    const decisionEdges = edgesBySource[nextNode.id] || [];
+                    for (const edge of decisionEdges) {
+                        const targetNode = nodesMap.get(edge.target);
+                        if (targetNode) {
+                            const targetId = targetNode.type === 'exit' ? 'End' : nodeIdMap.get(edge.target);
+                            if (targetId) {
+                                const label = (edge.data?.label || 'option').toLowerCase().replace(/ /g, '_');
+                                yaml += `        ${label}: "${targetId}"\n`;
+                            }
+                        }
+                    }
+                    processedNodeIds.add(nextNode.id);
+                } else if (outgoingEdges.length === 1) {
+                    const targetId = nodeIdMap.get(outgoingEdges[0].target);
+                    if (targetId) {
+                        yaml += `      next: "${targetId}"\n`;
+                    }
+                }
+            }
+        }
+
+        processedNodeIds.add(node.id);
     }
 
     return yaml;
@@ -142,10 +147,10 @@ const FlowDiagram = ({ onYamlChange }) => {
 
     useEffect(() => {
         if (onYamlChange) {
-            const yamlString = generateYaml(nodes, edges, flowTitle);
+            const yamlString = generateYaml(nodes, edges);
             onYamlChange(yamlString);
         }
-    }, [nodes, edges, flowTitle, onYamlChange]);
+    }, [nodes, edges, onYamlChange]);
 
     useEffect(() => {
         const currentSelectedNodes = nodes.filter(n => n.selected);

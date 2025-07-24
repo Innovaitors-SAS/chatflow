@@ -29,13 +29,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
 
     const onFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
-            const selectedFile = e.target.files[0];
-            if (selectedFile.type === 'application/pdf') {
-                setFile(selectedFile);
-            } else {
-                alert('Please select a PDF file.');
-                e.target.value = null;
-            }
+            setFile(e.target.files[0]);
         }
     };
     
@@ -43,12 +37,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
         e.preventDefault();
         e.stopPropagation();
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            const droppedFile = e.dataTransfer.files[0];
-            if (droppedFile.type === 'application/pdf') {
-                setFile(droppedFile);
-            } else {
-                alert('Please drop a PDF file.');
-            }
+            setFile(e.dataTransfer.files[0]);
         }
     }, []);
 
@@ -163,11 +152,11 @@ const ConditionActionNode = ({ id, data, selected }) => {
 
                     {action === 'Send File' && (
                         <div>
-                             <div style={{ marginBottom: 5, fontSize: 12, color: 'var(--muted-foreground)' }}>Upload PDF:</div>
+                             <div style={{ marginBottom: 5, fontSize: 12, color: 'var(--muted-foreground)' }}>Upload File:</div>
                             <div style={fileDropStyle} onDrop={handleFileDrop} onDragOver={handleDragOver} onClick={() => document.getElementById(`file-input-${id}`).click()}>
-                                {file ? `Selected: ${file.name}` : 'Drop PDF here, or click to select'}
+                                {file ? `Selected: ${file.name}` : 'Drop file here, or click to select'}
                             </div>
-                             <input id={`file-input-${id}`} type="file" accept=".pdf" onChange={onFileChange} style={{ display: 'none' }} />
+                             <input id={`file-input-${id}`} type="file" onChange={onFileChange} style={{ display: 'none' }} />
                         </div>
                     )}
 

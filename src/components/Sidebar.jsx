@@ -1,95 +1,93 @@
-function Sidebar({ yaml }) {
-    const onDragStart = (event, nodeType) => {
-        event.dataTransfer.setData('application/reactflow', nodeType);
-        event.dataTransfer.effectAllowed = 'move';
+import { useEffect, useRef } from 'react';
+
+function Sidebar({ yaml, isVisible, width, onToggle, onWidthChange }) {
+    const sidebarRef = useRef(null);
+    const isResizing = useRef(false);
+
+    const onMouseDown = () => {
+        isResizing.current = true;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
     };
 
-    const nodeBaseStyle = {
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        margin: '15px auto',
-        cursor: 'grab',
-        color: 'var(--foreground)',
-        fontWeight: 500,
-        border: '3px solid var(--border)',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-        transition: 'all 0.2s',
-        background: 'rgba(244, 244, 245, 0.7)', // --secondary with transparency
-    };
+    useEffect(() => {
+        const onMouseMove = (e) => {
+            if (!isResizing.current) return;
+            const newWidth = window.innerWidth - e.clientX;
+            if (newWidth >= 200 && newWidth <= 800) {
+                onWidthChange(newWidth);
+            }
+        };
 
-    const conditionStyle = {
-        ...nodeBaseStyle,
-        width: 96,
-        height: 48,
-        borderRadius: 'var(--radius)',
-    };
+        const onMouseUp = () => {
+            isResizing.current = false;
+            document.body.style.cursor = 'default';
+            document.body.style.userSelect = 'auto';
+        };
 
-    const decisionStyle = {
-        ...nodeBaseStyle,
-        width: 72,
-        height: 72,
-        transform: 'rotate(45deg)',
-    };
+        if (isVisible) {
+            window.addEventListener('mousemove', onMouseMove);
+            window.addEventListener('mouseup', onMouseUp);
+        }
 
-    const decisionTextStyle = {
-        transform: 'rotate(-45deg)',
-    };
+        return () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+        };
+    }, [isVisible, onWidthChange]);
 
-    const exitStyle = {
-        ...nodeBaseStyle,
-        width: 64,
-        height: 64,
-        borderRadius: '50%',
-    };
+    if (!isVisible) {
+        return null;
+    }
 
     return (
-        <div style={{
-            width: 300,
+        <aside ref={sidebarRef} style={{
+            width: `${width}px`,
             background: 'var(--secondary)',
-            padding: 15,
+            padding: '15px',
             borderLeft: '1px solid var(--border)',
             display: 'flex',
             flexDirection: 'column',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            position: 'relative',
+            flexShrink: 0
         }}>
-            <h3 style={{
-                textAlign: 'center',
-                margin: '10px 0 20px',
-                color: 'var(--muted-foreground)',
-                fontWeight: '600'
-            }}>
-                Nodes
-            </h3>
             <div
-                onDragStart={(event) => onDragStart(event, 'condition')}
-                draggable
-                style={conditionStyle}
-            >
-                Condition
-            </div>
-            <div
-                onDragStart={(event) => onDragStart(event, 'decision')}
-                draggable
-                style={decisionStyle}
-            >
-                <div style={decisionTextStyle}>Decision</div>
-            </div>
-            <div
-                onDragStart={(event) => onDragStart(event, 'exit')}
-                draggable
-                style={exitStyle}
-            >
-                Exit
-            </div>
-            <h3 style={{
-                textAlign: 'center',
-                margin: '30px 0 10px',
-                color: 'var(--muted-foreground)',
-                fontWeight: '600'
-            }}>
-                YAML Output
-            </h3>
+                onMouseDown={onMouseDown}
+                style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    width: 5,
+                    height: '100%',
+                    cursor: 'col-resize',
+                    zIndex: 10
+                }}
+            />
+            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{
+                    margin: 0,
+                    color: 'var(--muted-foreground)',
+                    fontWeight: '600'
+                }}>
+                    YAML Output
+                </h3>
+                <button
+                    onClick={onToggle}
+                    title="Hide Sidebar"
+                    style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '0',
+                        fontSize: '24px',
+                        lineHeight: 1,
+                        color: 'var(--muted-foreground)',
+                    }}
+                >
+                    &times;
+                </button>
+            </header>
             <textarea
                 readOnly
                 value={yaml || ''}
@@ -109,7 +107,7 @@ function Sidebar({ yaml }) {
                     minHeight: 150
                 }}
             />
-        </div>
+        </aside>
     );
 }
 
