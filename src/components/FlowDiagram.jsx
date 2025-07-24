@@ -14,14 +14,14 @@ import 'reactflow/dist/style.css';
 import '@reactflow/node-resizer/dist/style.css';
 import Sidebar from './Sidebar';
 import CustomEdge from './edges/CustomEdge';
-import ConditionNode from './nodes/ConditionNode';
+import ConditionActionNode from './nodes/ConditionActionNode';
 import DecisionNode from './nodes/DecisionNode';
 import GoToExitNode from './nodes/GoToExitNode';
 import StartNode from './nodes/StartNode';
 
 const nodeTypes = {
     start: StartNode,
-    condition: ConditionNode,
+    condition: ConditionActionNode,
     decision: DecisionNode,
     exit: GoToExitNode
 };
@@ -56,7 +56,11 @@ const FlowDiagram = () => {
             selectedNodeIds.current.size !== currentSelectedNodeIds.size ||
             
 
+
+
 ![...selectedNodeIds.current].every(id => currentSelectedNodeIds.has(id)
+
+
 
 )
         );

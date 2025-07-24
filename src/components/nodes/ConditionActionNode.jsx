@@ -1,34 +1,68 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
 
-const ConditionNode = ({ id, data, selected }) => {
+const ConditionActionNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const [text, setText] = useState(data.text || '');
     const [condition, setCondition] = useState(data.condition || '');
+    const [action, setAction] = useState('none');
+    const [file, setFile] = useState(null);
 
     useEffect(() => {
         if (isMenuOpen) {
             setText(data.text || '');
             setCondition(data.condition || '');
+            setAction(data.action || 'none');
+            setFile(data.file || null);
         }
-    }, [isMenuOpen, data.text, data.condition]);
+    }, [isMenuOpen, data.text, data.condition, data.action, data.file]);
 
     const handleSave = () => {
         setNodes(nodes => nodes.map(node =>
-            node.id === id ? { ...node, data: { ...node.data, text, condition } } : node
+            node.id === id ? { ...node, data: { ...node.data, text, condition, action, file: file ? { name: file.name, type: file.type, size: file.size } : null } } : node
         ));
         setIsMenuOpen(false);
     };
+
+    const onFileChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            const selectedFile = e.target.files[0];
+            if (selectedFile.type === 'application/pdf') {
+                setFile(selectedFile);
+            } else {
+                alert('Please select a PDF file.');
+                e.target.value = null;
+            }
+        }
+    };
+    
+    const handleFileDrop = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+            const droppedFile = e.dataTransfer.files[0];
+            if (droppedFile.type === 'application/pdf') {
+                setFile(droppedFile);
+            } else {
+                alert('Please drop a PDF file.');
+            }
+        }
+    }, []);
+
+    const handleDragOver = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, []);
 
     const nodeStyle = {
         width: '100%',
         height: '100%',
         backgroundColor: 'var(--card)',
         borderRadius: 'var(--radius)',
-        border: `2px solid ${selected ? 'var(--ring)' : 'var(--foreground)'}`,
+        border: `4px solid ${selected ? 'var(--ring)' : 'var(--foreground)'}`,
         position: 'relative',
         color: 'var(--card-foreground)',
         opacity: data.isDimmed ? 0.3 : 1,
@@ -57,10 +91,20 @@ const ConditionNode = ({ id, data, selected }) => {
         width: '100%'
     };
 
+    const fileDropStyle = {
+        border: '2px dashed var(--border)',
+        borderRadius: 'var(--radius)',
+        padding: '20px',
+        textAlign: 'center',
+        cursor: 'pointer',
+        marginTop: '10px',
+        color: 'var(--muted-foreground)'
+    };
+
     return (
         <div style={nodeStyle}>
-            <NodeResizer isVisible={selected} minWidth={200} minHeight={150} lineStyle={{borderColor: 'var(--ring)'}} handleStyle={{backgroundColor: 'var(--ring)'}} />
-            <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)' }} />
+            <NodeResizer isVisible={selected} minWidth={200} minHeight={150} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
+            <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: 4, border: '2px solid var(--card)' }} />
 
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ position: 'absolute', top: 5, right: 5, zIndex: 10, cursor: 'pointer', background: 'none', border: 'none', fontSize: '16px', color: 'var(--foreground)' }}>
                 ⋮
@@ -81,9 +125,11 @@ const ConditionNode = ({ id, data, selected }) => {
                     flexDirection: 'column',
                     gap: 10,
                     width: 250,
-                    pointerEvents: 'all'
+                    pointerEvents: 'all',
+                    maxHeight: 'calc(100vh - 50px)',
+                    overflowY: 'auto'
                 }}>
-                    <div style={{ fontWeight: 'bold' }}>Edit Condition</div>
+                    <div style={{ fontWeight: 'bold' }}>Edit Condition/Action</div>
 
                     <div>
                         <div style={{ marginBottom: 5, fontSize: 12, color: 'var(--muted-foreground)' }}>Description:</div>
@@ -105,6 +151,25 @@ const ConditionNode = ({ id, data, selected }) => {
                             style={inputStyle}
                         />
                     </div>
+
+                    <div>
+                        <div style={{ marginBottom: 5, fontSize: 12, color: 'var(--muted-foreground)' }}>Action:</div>
+                        <select value={action} onChange={(e) => setAction(e.target.value)} style={inputStyle}>
+                            <option value="none">None</option>
+                            <option value="Create Ticket">Create Ticket</option>
+                            <option value="Send File">Send File</option>
+                        </select>
+                    </div>
+
+                    {action === 'Send File' && (
+                        <div>
+                             <div style={{ marginBottom: 5, fontSize: 12, color: 'var(--muted-foreground)' }}>Upload PDF:</div>
+                            <div style={fileDropStyle} onDrop={handleFileDrop} onDragOver={handleDragOver} onClick={() => document.getElementById(`file-input-${id}`).click()}>
+                                {file ? `Selected: ${file.name}` : 'Drop PDF here, or click to select'}
+                            </div>
+                             <input id={`file-input-${id}`} type="file" accept=".pdf" onChange={onFileChange} style={{ display: 'none' }} />
+                        </div>
+                    )}
 
                     <button onClick={handleSave} style={buttonStyle}>
                         Save
@@ -128,11 +193,19 @@ const ConditionNode = ({ id, data, selected }) => {
                 }}>
                     <code>{data.condition || "No condition."}</code>
                 </div>
+                {data.action && data.action !== 'none' && (
+                    <div style={{ marginTop: 10, textAlign: 'center', fontSize: 12, color: 'var(--muted-foreground)' }}>
+                        Action: <strong>{data.action}</strong>
+                        {data.action === 'Send File' && data.file && (
+                            <div style={{fontSize: 10, wordBreak: 'break-all'}}>File: {data.file.name}</div>
+                        )}
+                    </div>
+                )}
             </div>
 
-            <Handle type="source" position={Position.Bottom} style={{ background: 'var(--foreground)' }} />
+            <Handle type="source" position={Position.Bottom} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: 4, border: '2px solid var(--card)' }} />
         </div>
     );
 };
 
-export default ConditionNode;
+export default ConditionActionNode;

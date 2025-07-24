@@ -28,7 +28,7 @@ const StartNode = ({ id, data, selected }) => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        border: `2px solid ${selected ? 'var(--ring)' : 'var(--foreground)'}`,
+        border: `4px solid ${selected ? 'var(--ring)' : 'var(--foreground)'}`,
         position: 'relative',
         color: 'var(--card-foreground)',
         opacity: data.isDimmed ? 0.3 : 1,
@@ -48,7 +48,7 @@ const StartNode = ({ id, data, selected }) => {
 
     return (
         <div style={nodeStyle}>
-            <NodeResizer isVisible={selected} minWidth={100} minHeight={50} lineStyle={{borderColor: 'var(--ring)'}} handleStyle={{backgroundColor: 'var(--ring)'}} />
+            <NodeResizer isVisible={selected} minWidth={100} minHeight={50} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
             
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ position: 'absolute', top: 10, right: 10, zIndex: 10, cursor: 'pointer', background: 'none', border: 'none', fontSize: '16px', color: 'var(--foreground)' }}>
                 ⋮
@@ -94,7 +94,7 @@ const StartNode = ({ id, data, selected }) => {
                 <div style={{ fontSize: 12, color: 'var(--muted-foreground)' }}>{data.text || "Workflow Start"}</div>
             </div>
 
-            <Handle type="source" position={Position.Bottom} style={{ background: 'var(--foreground)' }} />
+            <Handle type="source" position={Position.Bottom} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }} />
         </div>
     );
 };
