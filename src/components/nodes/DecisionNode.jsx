@@ -35,8 +35,11 @@ const DecisionNode = ({ id, data, selected }) => {
                 height: '100%',
                 backgroundColor: 'var(--card)',
                 transform: 'rotate(45deg)',
-                border: `1.5px solid ${selected ? 'var(--ring)' : 'var(--foreground)'}`,
+                border: `2px solid ${selected ? 'var(--ring)' : 'var(--foreground)'}`,
                 color: 'var(--card-foreground)',
+                opacity: data.isDimmed ? 0.3 : 1,
+                transition: 'opacity 0.2s',
+                pointerEvents: data.isDimmed ? 'none' : 'auto',
             }}
         >
             <NodeResizer isVisible={selected} keepAspectRatio minWidth={100} minHeight={100} lineStyle={{borderColor: 'var(--ring)'}} handleStyle={{backgroundColor: 'var(--ring)'}} />
@@ -64,6 +67,7 @@ const DecisionNode = ({ id, data, selected }) => {
                     flexDirection: 'column',
                     gap: 8,
                     width: 200,
+                    pointerEvents: 'all'
                 }}>
                     <div style={{ fontWeight: 'bold' }}>Edit Options</div>
                     {(options || []).map((option, index) => (

@@ -29,18 +29,22 @@ const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, ta
         }
     };
 
+    const pathStyle = {
+        stroke: 'var(--foreground)',
+        strokeWidth: selected ? 3 : 2,
+        fill: 'none',
+        strokeDasharray: '5 5',
+        opacity: data.isDimmed ? 0.3 : 1,
+        transition: 'opacity 0.2s'
+    };
+
     return (
         <>
             <path
                 id={id}
                 d={edgePath}
                 className="animated-edge"
-                style={{
-                    stroke: 'var(--foreground)',
-                    strokeWidth: selected ? 2 : 1.5,
-                    fill: 'none',
-                    strokeDasharray: '5 5'
-                }}
+                style={pathStyle}
                 markerEnd={markerEnd}
             />
             <foreignObject
@@ -49,12 +53,12 @@ const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, ta
                 x={labelX - 60}
                 y={labelY - 20}
                 requiredExtensions="http://www.w3.org/1999/xhtml"
-                style={{ pointerEvents: 'none' }}
+                style={{ pointerEvents: 'none', opacity: data.isDimmed ? 0.3 : 1, transition: 'opacity 0.2s' }}
             >
                 <div
                     onDoubleClick={() => setIsEditing(true)}
                     style={{
-                        pointerEvents: 'all',
+                        pointerEvents: data.isDimmed ? 'none' : 'all',
                         position: 'relative',
                         height: '100%',
                         width: '100%',

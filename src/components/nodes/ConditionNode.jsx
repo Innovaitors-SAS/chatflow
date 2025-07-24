@@ -28,9 +28,12 @@ const ConditionNode = ({ id, data, selected }) => {
         height: '100%',
         backgroundColor: 'var(--card)',
         borderRadius: 'var(--radius)',
-        border: `1.5px solid ${selected ? 'var(--ring)' : 'var(--foreground)'}`,
+        border: `2px solid ${selected ? 'var(--ring)' : 'var(--foreground)'}`,
         position: 'relative',
         color: 'var(--card-foreground)',
+        opacity: data.isDimmed ? 0.3 : 1,
+        transition: 'opacity 0.2s',
+        pointerEvents: data.isDimmed ? 'none' : 'auto',
     };
 
     const inputStyle = {
@@ -77,7 +80,8 @@ const ConditionNode = ({ id, data, selected }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 10,
-                    width: 250
+                    width: 250,
+                    pointerEvents: 'all'
                 }}>
                     <div style={{ fontWeight: 'bold' }}>Edit Condition</div>
 

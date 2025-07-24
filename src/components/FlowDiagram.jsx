@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactFlow, {
     Background,
     Controls,
@@ -17,8 +17,10 @@ import CustomEdge from './edges/CustomEdge';
 import ConditionNode from './nodes/ConditionNode';
 import DecisionNode from './nodes/DecisionNode';
 import GoToExitNode from './nodes/GoToExitNode';
+import StartNode from './nodes/StartNode';
 
 const nodeTypes = {
+    start: StartNode,
     condition: ConditionNode,
     decision: DecisionNode,
     exit: GoToExitNode
@@ -28,11 +30,95 @@ const edgeTypes = {
     custom: CustomEdge
 };
 
+const initialNodes = [
+    {
+        id: 'start-node-1',
+        type: 'start',
+        position: { x: 450, y: 50 },
+        data: { text: 'Workflow Start' },
+        style: { width: 140, height: 70 },
+        deletable: false,
+    }
+];
+
 const FlowDiagram = () => {
     const reactFlowWrapper = useRef(null);
-    const [nodes, setNodes, onNodesChange] = useNodesState([]);
+    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
+    const selectedNodeIds = useRef(new Set());
+
+    useEffect(() => {
+        const currentSelectedNodes = nodes.filter(n => n.selected);
+        const currentSelectedNodeIds = new Set(currentSelectedNodes.map(n => n.id));
+    
+        const hasSelectionChanged = (
+            selectedNodeIds.current.size !== currentSelectedNodeIds.size ||
+            
+
+![...selectedNodeIds.current].every(id => currentSelectedNodeIds.has(id)
+
+)
+        );
+
+        if (!hasSelectionChanged) {
+            return;
+        }
+
+        selectedNodeIds.current = currentSelectedNodeIds;
+
+        if (currentSelectedNodes.length === 0) {
+            setNodes((nds) => nds.map((n) => ({ ...n, data: { ...n.data, isDimmed: false } })));
+            setEdges((eds) => eds.map((e) => ({ ...e, data: { ...e.data, isDimmed: false } })));
+            return;
+        }
+
+        const isStartNodeSelected = currentSelectedNodes.some(n => n.type === 'start');
+        if (currentSelectedNodes.length === 1 && isStartNodeSelected) {
+            setNodes((nds) => nds.map((n) => ({ ...n, data: { ...n.data, isDimmed: false } })));
+            setEdges((eds) => eds.map((e) => ({ ...e, data: { ...e.data, isDimmed: false } })));
+            return;
+        }
+
+        const pathNodeIds = new Set();
+        const pathEdgeIds = new Set();
+        const queue = [...currentSelectedNodes];
+        currentSelectedNodes.forEach(n => pathNodeIds.add(n.id));
+
+        const nodesMap = new Map(nodes.map(n => [n.id, n]));
+        
+        while (queue.length > 0) {
+            const currentNode = queue.shift();
+            
+            if (currentNode.type === 'start') continue;
+
+            const incomingEdges = edges.filter((e) => e.target === currentNode.id);
+
+            for (const edge of incomingEdges) {
+                if (!pathEdgeIds.has(edge.id)) {
+                    pathEdgeIds.add(edge.id);
+                    const sourceNode = nodesMap.get(edge.source);
+                    if (sourceNode && !pathNodeIds.has(sourceNode.id)) {
+                        pathNodeIds.add(sourceNode.id);
+                        queue.push(sourceNode);
+                    }
+                }
+            }
+        }
+        
+        setNodes((nds) =>
+            nds.map((n) => ({
+                ...n,
+                data: { ...n.data, isDimmed: !pathNodeIds.has(n.id) },
+            }))
+        );
+        setEdges((eds) =>
+            eds.map((e) => ({
+                ...e,
+                data: { ...e.data, isDimmed: !pathEdgeIds.has(e.id) },
+            }))
+        );
+    }, [nodes, edges, setNodes, setEdges]);
 
     const onConnect = useCallback(
         (params) => {
