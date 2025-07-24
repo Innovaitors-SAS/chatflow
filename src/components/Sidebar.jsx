@@ -4,55 +4,56 @@ function Sidebar() {
         event.dataTransfer.effectAllowed = 'move';
     };
 
+    const nodeStyle = {
+        padding: '10px 15px',
+        margin: '10px 0',
+        background: 'var(--background)',
+        borderRadius: 'var(--radius)',
+        cursor: 'grab',
+        border: '1px solid var(--border)',
+        color: 'var(--foreground)',
+        textAlign: 'center',
+        fontWeight: 500,
+        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)'
+    };
+
     return (
         <div style={{
             width: 250,
-            background: '#f0f0f0',
+            background: 'var(--secondary)',
             padding: 15,
-            borderLeft: '1px solid #ddd'
+            borderLeft: '1px solid var(--border)',
+            display: 'flex',
+            flexDirection: 'column'
         }}>
-            <h3>Componentes</h3>
+            <h3 style={{
+                textAlign: 'center',
+                margin: '10px 0 20px',
+                color: 'var(--muted-foreground)',
+                fontWeight: '600'
+            }}>
+                Nodes
+            </h3>
             <div
                 onDragStart={(event) => onDragStart(event, 'condition')}
                 draggable
-                style={{
-                    padding: 10,
-                    margin: '10px 0',
-                    background: 'white',
-                    borderRadius: 5,
-                    cursor: 'grab',
-                    border: '1px solid #ddd'
-                }}
+                style={nodeStyle}
             >
-                Condition Node
+                Condition
             </div>
             <div
                 onDragStart={(event) => onDragStart(event, 'decision')}
                 draggable
-                style={{
-                    padding: 10,
-                    margin: '10px 0',
-                    background: 'white',
-                    borderRadius: 5,
-                    cursor: 'grab',
-                    border: '1px solid #ddd'
-                }}
+                style={nodeStyle}
             >
-                Decision Node
+                Decision
             </div>
             <div
                 onDragStart={(event) => onDragStart(event, 'exit')}
                 draggable
-                style={{
-                    padding: 10,
-                    margin: '10px 0',
-                    background: 'white',
-                    borderRadius: 5,
-                    cursor: 'grab',
-                    border: '1px solid #ddd'
-                }}
+                style={nodeStyle}
             >
-                Exit Node
+                Exit
             </div>
         </div>
     );

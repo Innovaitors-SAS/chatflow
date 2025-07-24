@@ -5,10 +5,10 @@ import { NodeResizer } from '@reactflow/node-resizer';
 const DecisionNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
     const [isEditing, setIsEditing] = useState(false);
-    const [options, setOptions] = useState(data.options || ['Sí', 'No']);
+    const [options, setOptions] = useState(data.options || ['Yes', 'No']);
     const nodeRef = useRef(null);
 
-    const handleAddOption = () => setOptions([...options, `Opción ${options.length + 1}`]);
+    const handleAddOption = () => setOptions([...options, `Option ${options.length + 1}`]);
     const handleRemoveOption = (index) => setOptions(options.filter((_, i) => i !== index));
     const handleOptionChange = (index, value) => {
         const newOptions = [...options];
@@ -36,37 +36,29 @@ const DecisionNode = ({ id, data, selected }) => {
             style={{
                 width: '100%',
                 height: '100%',
-                backgroundColor: '#ffecb3',
+                backgroundColor: 'var(--card)',
                 transform: 'rotate(45deg)',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                border: selected ? '2px solid #2196f3' : '2px solid transparent',
-                position: 'relative'
+                border: `1.5px solid ${selected ? 'var(--ring)' : 'var(--foreground)'}`,
+                color: 'var(--card-foreground)',
             }}
         >
-            <NodeResizer isVisible={selected} keepAspectRatio minWidth={100} minHeight={100} />
-            <Handle type="target" position={Position.Top} />
+            <NodeResizer isVisible={selected} keepAspectRatio minWidth={100} minHeight={100} lineStyle={{borderColor: 'var(--ring)'}} handleStyle={{backgroundColor: 'var(--ring)'}} />
+            <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)' }}/>
 
-            <div style={{ transform: 'rotate(-45deg)', width: '100%', height: '100%' }}>
+            <div style={{ transform: 'rotate(-45deg)', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {isEditing ? (
-                    <div style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ padding: 8, display: 'flex', flexDirection: 'column', gap: 8, width: '80%' }}>
                         {options.map((option, index) => (
                             <div key={index} style={{ display: 'flex', gap: 4 }}>
                                 <input
                                     type="text"
                                     value={option}
                                     onChange={(e) => handleOptionChange(index, e.target.value)}
-                                    style={{ flex: 1, padding: 4 }}
+                                    style={{ flex: 1, padding: 4, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', borderRadius: '4px' }}
                                 />
                                 <button
                                     onClick={() => handleRemoveOption(index)}
-                                    style={{
-                                        background: '#f44336',
-                                        color: 'white',
-                                        border: 'none',
-                                        cursor: 'pointer'
-                                    }}
+                                    style={{ background: 'var(--destructive)', color: 'var(--destructive-foreground)', border: 'none', cursor: 'pointer', borderRadius: '4px', width: '24px' }}
                                 >
                                     ×
                                 </button>
@@ -74,27 +66,15 @@ const DecisionNode = ({ id, data, selected }) => {
                         ))}
                         <button
                             onClick={handleAddOption}
-                            style={{
-                                background: '#4caf50',
-                                color: 'white',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: 4
-                            }}
+                            style={{ background: 'var(--secondary)', color: 'var(--secondary-foreground)', border: '1px solid var(--border)', cursor: 'pointer', padding: 4, borderRadius: '4px' }}
                         >
-                            + Añadir opción
+                            + Add Option
                         </button>
                         <button
                             onClick={handleSave}
-                            style={{
-                                background: '#2196f3',
-                                color: 'white',
-                                border: 'none',
-                                cursor: 'pointer',
-                                padding: 4
-                            }}
+                            style={{ background: 'var(--primary)', color: 'var(--primary-foreground)', border: 'none', cursor: 'pointer', padding: 4, borderRadius: '4px' }}
                         >
-                            Guardar
+                            Save
                         </button>
                     </div>
                 ) : (
@@ -106,15 +86,13 @@ const DecisionNode = ({ id, data, selected }) => {
                             display: 'flex',
                             flexDirection: 'column',
                             gap: 8,
-                            height: '100%',
-                            justifyContent: 'center'
                         }}
                     >
-                        <div style={{ fontWeight: 'bold' }}>Decisión</div>
+                        <div style={{ fontWeight: 'bold' }}>Decision</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {options.map((option, index) => (
                                 <div key={index} style={{
-                                    background: 'rgba(255,255,255,0.3)',
+                                    background: 'var(--secondary)',
                                     padding: '2px 4px',
                                     borderRadius: 4,
                                     fontSize: 12
@@ -135,7 +113,7 @@ const DecisionNode = ({ id, data, selected }) => {
                     id={`option-${index}`}
                     style={{
                         left: `${(index + 1) * (100 / (options.length + 1))}%`,
-                        background: '#ff9800',
+                        background: 'var(--foreground)',
                         width: 8,
                         height: 8
                     }}

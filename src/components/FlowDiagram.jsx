@@ -7,7 +7,8 @@ import ReactFlow, {
     ReactFlowProvider,
     addEdge,
     useEdgesState,
-    useNodesState
+    useNodesState,
+    MarkerType
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import '@reactflow/node-resizer/dist/style.css';
@@ -50,7 +51,12 @@ const FlowDiagram = () => {
                 }
             }
 
-            setEdges((eds) => addEdge({ ...params, type: 'custom', data: { label: edgeLabel } }, eds));
+            setEdges((eds) => addEdge({
+                ...params,
+                type: 'custom',
+                data: { label: edgeLabel },
+                markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }
+            }, eds));
         },
         [setEdges, nodes]
     );
@@ -80,7 +86,7 @@ const FlowDiagram = () => {
                 position,
                 data: {
                     label: `${type} node`,
-                    ...(type === 'decision' && { options: ['Sí', 'No'] })
+                    ...(type === 'decision' && { options: ['Yes', 'No'] })
                 },
             };
 
@@ -115,10 +121,17 @@ const FlowDiagram = () => {
                         fitView
                     >
                         <Controls />
-                        <MiniMap />
-                        <Background color="#aaa" gap={16} />
-                        <Panel position="top-right">
-                            <h3>Diagrama de Flujo</h3>
+                        <MiniMap nodeColor="#f4f4f5" nodeStrokeWidth={3} />
+                        <Background color="var(--border)" gap={16} />
+                        <Panel position="top-right" style={{
+                            background: 'var(--secondary)',
+                            color: 'var(--foreground)',
+                            padding: '5px 15px',
+                            borderRadius: 'var(--radius)',
+                            border: '1px solid var(--border)',
+                            boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)'
+                        }}>
+                            <h3>Flow Builder</h3>
                         </Panel>
                     </ReactFlow>
                 </div>

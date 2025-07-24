@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { getSmoothStepPath, useReactFlow } from 'reactflow';
 
-const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, data, selected }) => {
+const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, data, selected, markerEnd }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [label, setLabel] = useState(data.label || '');
     const { setEdges } = useReactFlow();
@@ -13,7 +13,7 @@ const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, ta
         targetX,
         targetY,
         targetPosition,
-        borderRadius: 0
+        borderRadius: 5
     });
 
     const handleSave = () => {
@@ -23,57 +23,73 @@ const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, ta
         setIsEditing(false);
     };
 
+    const handleKeyDown = (evt) => {
+        if (evt.key === 'Enter') {
+            handleSave();
+        }
+    };
+
     return (
         <>
             <path
                 id={id}
                 d={edgePath}
                 style={{
-                    stroke: selected ? '#ff5722' : '#bdbdbd',
-                    strokeWidth: 2,
+                    stroke: 'var(--foreground)',
+                    strokeWidth: selected ? 2 : 1.5,
                     fill: 'none'
                 }}
+                markerEnd={markerEnd}
             />
             <foreignObject
-                width="100"
+                width="120"
                 height="40"
-                x={labelX - 50}
+                x={labelX - 60}
                 y={labelY - 20}
                 requiredExtensions="http://www.w3.org/1999/xhtml"
+                style={{ pointerEvents: 'none' }}
             >
-                <div style={{
-                    position: 'relative',
-                    height: '100%',
-                    width: '100%',
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center'
-                }}>
+                <div
+                    onDoubleClick={() => setIsEditing(true)}
+                    style={{
+                        pointerEvents: 'all',
+                        position: 'relative',
+                        height: '100%',
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        color: 'var(--foreground)'
+                    }}>
                     {isEditing ? (
                         <div style={{
                             display: 'flex',
-                            background: 'white',
-                            borderRadius: 4,
+                            background: 'var(--background)',
+                            borderRadius: 'var(--radius)',
                             overflow: 'hidden',
+                            border: '1px solid var(--border)',
                             boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
                         }}>
                             <input
                                 type="text"
                                 value={label}
                                 onChange={(e) => setLabel(e.target.value)}
+                                onKeyDown={handleKeyDown}
                                 autoFocus
                                 style={{
                                     border: 'none',
                                     padding: '4px 8px',
                                     fontSize: 12,
-                                    minWidth: 80
+                                    minWidth: 80,
+                                    background: 'var(--card)',
+                                    color: 'var(--foreground)'
                                 }}
                             />
                             <button
                                 onClick={handleSave}
                                 style={{
-                                    background: '#4caf50',
-                                    color: 'white',
+                                    background: 'var(--primary)',
+                                    color: 'var(--primary-foreground)',
                                     border: 'none',
                                     cursor: 'pointer',
                                     padding: '0 8px'
@@ -83,21 +99,31 @@ const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, ta
                             </button>
                         </div>
                     ) : (
-                        <div
-                            onDoubleClick={() => setIsEditing(true)}
-                            style={{
-                                background: selected ? '#2196f3' : 'white',
-                                color: selected ? 'white' : 'black',
-                                padding: '4px 8px',
+                        label ? (
+                            <div
+                                style={{
+                                    background: 'var(--secondary)',
+                                    padding: '4px 8px',
+                                    borderRadius: 4,
+                                    border: '1px solid var(--border)',
+                                    fontSize: 12,
+                                    cursor: 'pointer',
+                                    textAlign: 'center'
+                                }}
+                            >
+                                {label}
+                            </div>
+                        ) : (selected && <div style={{
+                                background: 'var(--secondary)',
+                                padding: '2px 4px',
                                 borderRadius: 4,
-                                border: '1px solid #ddd',
-                                fontSize: 12,
+                                border: '1px dashed var(--border)',
+                                fontSize: 10,
                                 cursor: 'pointer',
-                                textAlign: 'center'
-                            }}
-                        >
-                            {label || "Doble clic para editar"}
-                        </div>
+                                color: 'var(--muted-foreground)'
+                            }}>
+                            + label
+                        </div>)
                     )}
                 </div>
             </foreignObject>
