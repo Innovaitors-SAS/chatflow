@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
+import { NodeResizer } from '@reactflow/node-resizer';
 
 const ConditionNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
@@ -16,13 +17,14 @@ const ConditionNode = ({ id, data, selected }) => {
 
     return (
         <div style={{
-            width: data.width || 300,
-            minHeight: data.height || 180,
+            width: '100%',
+            height: '100%',
             backgroundColor: '#e3f2fd',
             borderRadius: 8,
             border: selected ? '2px solid #2196f3' : '1px solid #90caf9',
             position: 'relative'
         }}>
+            <NodeResizer isVisible={selected} minWidth={200} minHeight={150} />
             <Handle type="target" position={Position.Top} />
 
             {isEditing ? (
@@ -98,20 +100,6 @@ const ConditionNode = ({ id, data, selected }) => {
             )}
 
             <Handle type="source" position={Position.Bottom} />
-
-            {selected && (
-                <div
-                    style={{
-                        position: 'absolute',
-                        right: 5,
-                        bottom: 5,
-                        width: 10,
-                        height: 10,
-                        backgroundColor: '#2196f3',
-                        cursor: 'nwse-resize'
-                    }}
-                />
-            )}
         </div>
     );
 };

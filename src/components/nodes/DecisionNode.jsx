@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
+import { NodeResizer } from '@reactflow/node-resizer';
 
 const DecisionNode = ({ id, data, selected }) => {
     const { setNodes, getEdges } = useReactFlow();
@@ -33,8 +34,8 @@ const DecisionNode = ({ id, data, selected }) => {
         <div
             ref={nodeRef}
             style={{
-                width: data.width || 140,
-                height: data.height || 140,
+                width: '100%',
+                height: '100%',
                 backgroundColor: '#ffecb3',
                 transform: 'rotate(45deg)',
                 display: 'flex',
@@ -44,6 +45,7 @@ const DecisionNode = ({ id, data, selected }) => {
                 position: 'relative'
             }}
         >
+            <NodeResizer isVisible={selected} keepAspectRatio minWidth={100} minHeight={100} />
             <Handle type="target" position={Position.Top} />
 
             <div style={{ transform: 'rotate(-45deg)', width: '100%', height: '100%' }}>
@@ -140,19 +142,6 @@ const DecisionNode = ({ id, data, selected }) => {
                     }}
                 />
             ))}
-
-            {selected && (
-                <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    right: 0,
-                    width: 10,
-                    height: 10,
-                    backgroundColor: '#2196f3',
-                    cursor: 'nwse-resize',
-                    transform: 'rotate(-45deg)'
-                }} />
-            )}
         </div>
     );
 };

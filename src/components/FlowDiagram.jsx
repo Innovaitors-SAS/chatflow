@@ -10,6 +10,7 @@ import ReactFlow, {
     useNodesState
 } from 'reactflow';
 import 'reactflow/dist/style.css';
+import '@reactflow/node-resizer/dist/style.css';
 import Sidebar from './Sidebar';
 import CustomEdge from './edges/CustomEdge';
 import ConditionNode from './nodes/ConditionNode';

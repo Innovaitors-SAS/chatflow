@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
+import { NodeResizer } from '@reactflow/node-resizer';
 
 const GoToExitNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
@@ -17,8 +18,8 @@ const GoToExitNode = ({ id, data, selected }) => {
 
     return (
         <div style={{
-            width: data.width || 120,
-            height: data.height || 120,
+            width: '100%',
+            height: '100%',
             backgroundColor: '#ffcdd2',
             borderRadius: '50%',
             display: 'flex',
@@ -27,6 +28,7 @@ const GoToExitNode = ({ id, data, selected }) => {
             border: selected ? '2px solid #2196f3' : '2px solid transparent',
             position: 'relative'
         }}>
+            <NodeResizer isVisible={selected} keepAspectRatio minWidth={80} minHeight={80} />
             <Handle type="target" position={Position.Top} />
 
             {isEditing ? (
@@ -56,18 +58,6 @@ const GoToExitNode = ({ id, data, selected }) => {
                     <div style={{ fontWeight: 'bold' }}>Exit</div>
                     <div>{text || "Doble clic para editar"}</div>
                 </div>
-            )}
-
-            {selected && (
-                <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    right: 0,
-                    width: 10,
-                    height: 10,
-                    backgroundColor: '#2196f3',
-                    cursor: 'nwse-resize'
-                }} />
             )}
         </div>
     );
