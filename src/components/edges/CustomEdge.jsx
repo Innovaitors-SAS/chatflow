@@ -1,12 +1,20 @@
 import { useState } from 'react';
-import { useReactFlow } from 'reactflow';
+import { getSmoothStepPath, useReactFlow } from 'reactflow';
 
-const CustomEdge = ({ id, sourceX, sourceY, targetX, targetY, data, selected }) => {
+const CustomEdge = ({ id, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, data, selected }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [label, setLabel] = useState(data.label || '');
     const { setEdges } = useReactFlow();
 
-    const edgePath = `M ${sourceX} ${sourceY} L ${targetX} ${targetY}`;
+    const [edgePath, labelX, labelY] = getSmoothStepPath({
+        sourceX,
+        sourceY,
+        sourcePosition,
+        targetX,
+        targetY,
+        targetPosition,
+        borderRadius: 0
+    });
 
     const handleSave = () => {
         setEdges(edges => edges.map(edge =>
@@ -29,8 +37,8 @@ const CustomEdge = ({ id, sourceX, sourceY, targetX, targetY, data, selected }) 
             <foreignObject
                 width="100"
                 height="40"
-                x={(sourceX + targetX) / 2 - 50}
-                y={(sourceY + targetY) / 2 - 20}
+                x={labelX - 50}
+                y={labelY - 20}
                 requiredExtensions="http://www.w3.org/1999/xhtml"
             >
                 <div style={{

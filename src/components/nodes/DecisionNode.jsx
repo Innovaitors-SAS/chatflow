@@ -3,7 +3,7 @@ import { Handle, Position, useReactFlow } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
 
 const DecisionNode = ({ id, data, selected }) => {
-    const { setNodes, getEdges } = useReactFlow();
+    const { setNodes } = useReactFlow();
     const [isEditing, setIsEditing] = useState(false);
     const [options, setOptions] = useState(data.options || ['Sí', 'No']);
     const nodeRef = useRef(null);
@@ -133,7 +133,6 @@ const DecisionNode = ({ id, data, selected }) => {
                     type="source"
                     position={Position.Bottom}
                     id={`option-${index}`}
-                    data={{ label: option }}
                     style={{
                         left: `${(index + 1) * (100 / (options.length + 1))}%`,
                         background: '#ff9800',

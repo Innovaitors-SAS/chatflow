@@ -34,8 +34,25 @@ const FlowDiagram = () => {
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
 
     const onConnect = useCallback(
-        (params) => setEdges((eds) => addEdge({ ...params, type: 'custom', data: { label: '' } }, eds)),
-        [setEdges]
+        (params) => {
+            const { source, sourceHandle } = params;
+            const sourceNode = nodes.find((node) => node.id === source);
+            let edgeLabel = '';
+
+            if (sourceNode?.type === 'decision' && sourceHandle) {
+                const optionIndex = parseInt(sourceHandle.split('-')[1], 10);
+                if (
+                    sourceNode.data.options &&
+                    !isNaN(optionIndex) &&
+                    sourceNode.data.options[optionIndex]
+                ) {
+                    edgeLabel = sourceNode.data.options[optionIndex];
+                }
+            }
+
+            setEdges((eds) => addEdge({ ...params, type: 'custom', data: { label: edgeLabel } }, eds));
+        },
+        [setEdges, nodes]
     );
 
     const onDragOver = useCallback((event) => {
