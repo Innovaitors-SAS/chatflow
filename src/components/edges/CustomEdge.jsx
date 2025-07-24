@@ -37,12 +37,12 @@ const CustomEdge = ({ id, source, sourceX, sourceY, sourcePosition, targetX, tar
     };
 
     const pathStyle = {
-        stroke: 'var(--foreground)',
+        stroke: selected ? 'var(--ring)' : 'var(--foreground)',
         strokeWidth: selected ? 5 : 3,
         fill: 'none',
         strokeDasharray: '7 7',
         opacity: data.isDimmed ? 0.3 : 1,
-        transition: 'opacity 0.2s'
+        transition: 'opacity 0.2s, stroke 0.2s'
     };
 
     return (

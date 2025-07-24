@@ -6,6 +6,7 @@ import ReactFlow, {
     MarkerType,
     Panel,
     ReactFlowProvider,
+    SelectionMode,
     addEdge,
     useEdgesState,
     useNodesState
@@ -360,6 +361,8 @@ const FlowDiagram = ({ onYamlChange }) => {
                         edgeTypes={edgeTypes}
                         fitView
                         minZoom={0.1}
+                        selectionOnDrag
+                        selectionMode={SelectionMode.Partial}
                     >
                         <Controls />
                         <Background color="var(--border)" gap={16} />

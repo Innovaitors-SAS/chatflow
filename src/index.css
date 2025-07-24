@@ -17,7 +17,7 @@
   --destructive-foreground: #fafafa;
   --border: #e4e4e7; /* zinc-200 */
   --input: #e4e4e7;
-  --ring: #09090b;
+  --ring: #3b82f6; /* blue-500 */
   --radius: 0.5rem;
 
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
