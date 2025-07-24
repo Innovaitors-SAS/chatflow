@@ -1,4 +1,5 @@
 import '@reactflow/node-resizer/dist/style.css';
+import * as dagre from 'dagre';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactFlow, {
     Background,
@@ -138,82 +139,57 @@ function generateYaml(nodes, edges) {
     return yaml;
 }
 
-const getLayoutedElements = (nodes, edges) => {
-    if (nodes.length === 0) {
-        return { nodes, edges };
-    }
-    const nodeMap = new Map(nodes.map(n => [n.id, n]));
-    const adj = new Map(nodes.map(n => [n.id, []]));
-    const inDegree = new Map(nodes.map(n => [n.id, 0]));
+const getLayoutedElements = (nodes, edges, direction = 'TB') => {
+    const dagreGraph = new dagre.graphlib.Graph();
+    dagreGraph.setDefaultEdgeLabel(() => ({}));
+    dagreGraph.setGraph({ rankdir: direction, nodesep: 100, ranksep: 100 });
 
-    for (const edge of edges) {
-        if (adj.has(edge.source)) {
-            adj.get(edge.source).push(edge.target);
-        }
-        inDegree.set(edge.target, (inDegree.get(edge.target) || 0) + 1);
-    }
-    
-    const queue = nodes.filter(n => (inDegree.get(n.id) || 0) === 0).map(n => n.id);
-    const layers = [];
-    
-    while(queue.length > 0) {
-        const layerSize = queue.length;
-        const currentLayer = [];
-        for(let i = 0; i < layerSize; i++) {
-            const u = queue.shift();
-            currentLayer.push(u);
-            for (const v of (adj.get(u) || [])) {
-                inDegree.set(v, inDegree.get(v) - 1);
-                if (inDegree.get(v) === 0) {
-                    queue.push(v);
+    nodes.forEach((node) => {
+        const nodeWidth = node.width || (node.style && node.style.width) || 160;
+        const nodeHeight = node.height || (node.style && node.style.height) || 96;
+        dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    });
+
+    edges.forEach((edge) => {
+        dagreGraph.setEdge(edge.source, edge.target);
+    });
+
+    dagre.layout(dagreGraph);
+
+    let layoutedNodes = nodes.map((node) => {
+        const nodeWithPosition = dagreGraph.node(node.id);
+        if (nodeWithPosition) {
+            const nodeWidth = node.width || (node.style && node.style.width) || 160;
+            const nodeHeight = node.height || (node.style && node.style.height) || 96;
+            
+            return {
+                ...node,
+                position: {
+                    x: nodeWithPosition.x - nodeWidth / 2,
+                    y: nodeWithPosition.y - nodeHeight / 2,
                 }
-            }
+            };
         }
-        layers.push(currentLayer);
+        return node;
+    });
+
+    const startNode = layoutedNodes.find(n => n.type === 'start');
+    if (startNode) {
+        const startNodePos = startNode.position || { x: 0, y: 0 };
+        const offsetX = 450 - startNodePos.x;
+        const offsetY = 50 - startNodePos.y;
+
+        layoutedNodes = layoutedNodes.map(n => ({
+            ...n,
+            position: {
+                x: n.position.x + offsetX,
+                y: n.position.y + offsetY
+            }
+        }));
     }
-
-    const xSpacing = 250;
-    const ySpacing = 200;
-    let layoutedNodes = [];
-
-    layers.forEach((layer, layerIndex) => {
-        const layerWidth = (layer.length - 1) * xSpacing;
-        const startX = -layerWidth / 2;
-        layer.forEach((nodeId, nodeIndex) => {
-            const node = nodeMap.get(nodeId);
-            if (node) {
-                layoutedNodes.push({
-                    ...node,
-                    position: {
-                        x: startX + nodeIndex * xSpacing,
-                        y: layerIndex * ySpacing
-                    }
-                });
-            }
-        });
-    });
-
-    const nodesInLayers = new Set(layoutedNodes.map(n => n.id));
-    nodes.forEach(node => {
-        if (!nodesInLayers.has(node.id)) {
-            layoutedNodes.push({ ...node, position: { x: Math.random() * 400, y: Math.random() * 400 }});
-        }
-    });
     
-    const startNodePos = layoutedNodes.find(n => n.type === 'start')?.position || { x: 0, y: 0 };
-    const offsetX = 450 - startNodePos.x;
-    const offsetY = 50 - startNodePos.y;
-
-    const finalNodes = layoutedNodes.map(n => ({
-        ...n,
-        position: {
-            x: n.position.x + offsetX,
-            y: n.position.y + offsetY
-        }
-    }));
-    
-    return { nodes: finalNodes, edges };
-}
+    return { nodes: layoutedNodes, edges };
+};
 
 const generateFlowFromYaml = (yamlData) => {
     if (!yamlData?.graph?.nodes) {
@@ -320,6 +296,12 @@ const FlowDiagram = ({ onYamlChange, initialData }) => {
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const selectedNodeIds = useRef(new Set());
     const [menu, setMenu] = useState(null);
+
+    const onLayout = useCallback(() => {
+        const layouted = getLayoutedElements(nodes, edges);
+        setNodes(layouted.nodes);
+        setEdges(layouted.edges);
+    }, [nodes, edges, setNodes, setEdges]);
 
     useEffect(() => {
         if (initialData) {
@@ -556,10 +538,13 @@ const FlowDiagram = ({ onYamlChange, initialData }) => {
                         <Panel position="top-right" style={{
                             background: 'var(--secondary)',
                             color: 'var(--foreground)',
-                            padding: '10px 15px',
+                            padding: '10px',
                             borderRadius: 'var(--radius)',
                             border: '1px solid var(--border)',
-                            boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)'
+                            boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px'
                         }}>
                             {isEditingTitle ? (
                                 <input
@@ -578,17 +563,35 @@ const FlowDiagram = ({ onYamlChange, initialData }) => {
                                         color: 'var(--foreground)',
                                         borderBottom: '1px solid var(--foreground)',
                                         outline: 'none',
+                                        padding: '0 5px'
                                     }}
                                 />
                             ) : (
                                 <h3
                                     onDoubleClick={() => setIsEditingTitle(true)}
                                     title="Double-click to edit title"
-                                    style={{ margin: 0, cursor: 'pointer' }}
+                                    style={{ margin: 0, cursor: 'pointer', padding: '0 5px' }}
                                 >
                                     {flowTitle}
                                 </h3>
                             )}
+                            <button
+                                onClick={onLayout}
+                                title="Auto-layout"
+                                style={{
+                                    background: 'var(--secondary)',
+                                    color: 'var(--foreground)',
+                                    border: '1px solid var(--border)',
+                                    borderRadius: 'var(--radius)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    padding: '8px'
+                                }}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            </button>
                         </Panel>
                     </ReactFlow>
                 </div>
