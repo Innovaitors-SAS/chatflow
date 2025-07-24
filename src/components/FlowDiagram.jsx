@@ -1,18 +1,16 @@
+import '@reactflow/node-resizer/dist/style.css';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import ReactFlow, {
     Background,
     Controls,
-    MiniMap,
+    MarkerType,
     Panel,
     ReactFlowProvider,
     addEdge,
     useEdgesState,
-    useNodesState,
-    MarkerType
+    useNodesState
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import '@reactflow/node-resizer/dist/style.css';
-import Sidebar from './Sidebar';
 import CustomEdge from './edges/CustomEdge';
 import ConditionActionNode from './nodes/ConditionActionNode';
 import DecisionNode from './nodes/DecisionNode';
@@ -42,26 +40,23 @@ const initialNodes = [
 ];
 
 const FlowDiagram = () => {
-    const reactFlowWrapper = useRef(null);
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
     const [flowTitle, setFlowTitle] = useState('Flow Builder');
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const selectedNodeIds = useRef(new Set());
+    const [menu, setMenu] = useState(null);
 
     useEffect(() => {
         const currentSelectedNodes = nodes.filter(n => n.selected);
         const currentSelectedNodeIds = new Set(currentSelectedNodes.map(n => n.id));
-    
-        const hasSelectionChanged = (
+
+        const hasSelectionChanged =
             selectedNodeIds.current.size !== currentSelectedNodeIds.size ||
-            
 
-![...selectedNodeIds.current].every(id => currentSelectedNodeIds.has(id)
 
-)
-        );
+            ![...selectedNodeIds.current].every((id) => currentSelectedNodeIds.has(id));
 
         if (!hasSelectionChanged) {
             return;
@@ -88,10 +83,10 @@ const FlowDiagram = () => {
         currentSelectedNodes.forEach(n => pathNodeIds.add(n.id));
 
         const nodesMap = new Map(nodes.map(n => [n.id, n]));
-        
+
         while (queue.length > 0) {
             const currentNode = queue.shift();
-            
+
             if (currentNode.type === 'start') continue;
 
             const incomingEdges = edges.filter((e) => e.target === currentNode.id);
@@ -107,7 +102,7 @@ const FlowDiagram = () => {
                 }
             }
         }
-        
+
         setNodes((nds) =>
             nds.map((n) => ({
                 ...n,
@@ -129,14 +124,14 @@ const FlowDiagram = () => {
             }
             return acc;
         }, {});
-    
+
         let nodesChanged = false;
         const newNodes = nodes.map(node => {
             if (node.type === 'decision') {
                 const outEdgeCount = edgeCounts[node.id] || 0;
                 const optionsCount = node.data.options?.length || 0;
                 const hasWarning = outEdgeCount < optionsCount;
-    
+
                 if ((node.data.hasWarning || false) !== hasWarning) {
                     nodesChanged = true;
                     return { ...node, data: { ...node.data, hasWarning } };
@@ -144,7 +139,7 @@ const FlowDiagram = () => {
             }
             return node;
         });
-    
+
         if (nodesChanged) {
             setNodes(newNodes);
         }
@@ -180,23 +175,26 @@ const FlowDiagram = () => {
         [nodes, edges, setEdges]
     );
 
-    const onDragOver = useCallback((event) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = 'move';
-    }, []);
+    const onPaneClick = useCallback(() => setMenu(null), [setMenu]);
 
-    const onDrop = useCallback(
+    const onPaneContextMenu = useCallback(
         (event) => {
             event.preventDefault();
+            setMenu({
+                top: event.clientY,
+                left: event.clientX,
+            });
+        },
+        [setMenu]
+    );
 
-            if (!reactFlowInstance) return;
-
-            const type = event.dataTransfer.getData('application/reactflow');
-            if (!type) return;
+    const onAddNode = useCallback(
+        (type) => {
+            if (!reactFlowInstance || !menu) return;
 
             const position = reactFlowInstance.screenToFlowPosition({
-                x: event.clientX,
-                y: event.clientY,
+                x: menu.left,
+                y: menu.top,
             });
 
             let newNode = {
@@ -204,7 +202,6 @@ const FlowDiagram = () => {
                 type,
                 position,
                 data: {
-                    label: `${type} node`,
                     ...(type === 'decision' && { options: ['Yes', 'No'] })
                 },
             };
@@ -218,27 +215,15 @@ const FlowDiagram = () => {
             }
 
             setNodes((nds) => nds.concat(newNode));
+            setMenu(null);
         },
-        [reactFlowInstance, setNodes]
+        [reactFlowInstance, setNodes, menu]
     );
 
-    const nodeClassName = (node) => {
-        switch (node.type) {
-            case 'start':
-                return 'minimap-start-node';
-            case 'decision':
-                return 'minimap-decision-node';
-            case 'exit':
-                return 'minimap-exit-node';
-            default:
-                return '';
-        }
-    };
-
     return (
-        <div style={{ display: 'flex', height: '100vh', width: '100vw' }}>
+        <div style={{ height: '100vh', width: '100vw' }}>
             <ReactFlowProvider>
-                <div style={{ flexGrow: 1, height: '100%' }} ref={reactFlowWrapper}>
+                <div style={{ height: '100%', width: '100%' }}>
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
@@ -246,14 +231,13 @@ const FlowDiagram = () => {
                         onEdgesChange={onEdgesChange}
                         onConnect={onConnect}
                         onInit={setReactFlowInstance}
-                        onDrop={onDrop}
-                        onDragOver={onDragOver}
+                        onPaneClick={onPaneClick}
+                        onPaneContextMenu={onPaneContextMenu}
                         nodeTypes={nodeTypes}
                         edgeTypes={edgeTypes}
                         fitView
                     >
                         <Controls />
-                        <MiniMap nodeColor="#f4f4f5" nodeStrokeWidth={3} nodeClassName={nodeClassName} />
                         <Background color="var(--border)" gap={16} />
                         <Panel position="top-right" style={{
                             background: 'var(--secondary)',
@@ -263,7 +247,7 @@ const FlowDiagram = () => {
                             border: '1px solid var(--border)',
                             boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)'
                         }}>
-                             {isEditingTitle ? (
+                            {isEditingTitle ? (
                                 <input
                                     value={flowTitle}
                                     onChange={(e) => setFlowTitle(e.target.value)}
@@ -294,11 +278,19 @@ const FlowDiagram = () => {
                         </Panel>
                     </ReactFlow>
                 </div>
-                <Sidebar />
             </ReactFlowProvider>
+            {menu && (
+                <div className="context-menu" style={{ top: menu.top, left: menu.left }}>
+                    <div className="context-menu-header">Add Node</div>
+                    <ul>
+                        <li onClick={() => onAddNode('condition')}>Condition</li>
+                        <li onClick={() => onAddNode('decision')}>Decision</li>
+                        <li onClick={() => onAddNode('exit')}>Exit</li>
+                    </ul>
+                </div>
+            )}
         </div>
     );
 };
 
 export default FlowDiagram;
-
