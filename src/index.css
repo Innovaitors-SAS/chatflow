@@ -20,6 +20,12 @@
   --ring: #3b82f6; /* blue-500 */
   --radius: 0.5rem;
 
+  /* Added for sidebar */
+  --ring-rgb: 59, 130, 246;
+  --sidebar-bg: rgba(244, 244, 245, 0.75); /* semi-transparent zinc-100 */
+  --code-font: 'JetBrains Mono', 'Fira Code', monospace;
+
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;

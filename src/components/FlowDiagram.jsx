@@ -43,7 +43,7 @@ const initialNodes = [
 ];
 
 function generateYaml(nodes, edges) {
-    if (!nodes || nodes.length === 0) return '';
+    if (!nodes || nodes.length === 0) return { yamlString: '', lineMap: new Map() };
 
     const nodesMap = new Map(nodes.map(n => [n.id, n]));
     const edgesBySource = edges.reduce((acc, edge) => {
@@ -55,10 +55,20 @@ function generateYaml(nodes, edges) {
     const startNode = nodes.find(n => n.type === 'start');
     const alarmCode = startNode?.data?.text?.match(/\b(\d{4})\b/)?.[1] || 'XXXX';
 
-    let yaml = `graph:\n`;
-    yaml += `  id: "graph_alarm_${alarmCode}"\n`;
-    yaml += `  description: "${alarmCode}"\n\n`;
-    yaml += `  nodes:\n`;
+    let yamlLines = [];
+    const lineMap = new Map();
+
+    const push = (str) => yamlLines.push(str);
+
+    const startNodeLineRange = { start: 1, end: 0 };
+    push(`graph:`);
+    push(`  id: "graph_alarm_${alarmCode}"`);
+    push(`  description: "${alarmCode}"`);
+    push(``);
+    startNodeLineRange.end = yamlLines.length;
+    if (startNode) lineMap.set(startNode.id, startNodeLineRange);
+
+    push(`  nodes:`);
 
     const yamlNodes = nodes
         .filter(node => node.type !== 'start' && node.type !== 'exit')
@@ -67,18 +77,17 @@ function generateYaml(nodes, edges) {
     const processedNodeIds = new Set();
 
     for (const node of yamlNodes) {
-        if (processedNodeIds.has(node.id)) {
+        if (processedNodeIds.has(node.id) || node.type === 'decision') {
             continue;
         }
 
-        if (node.type === 'decision') {
-            continue;
-        }
+        const startLine = yamlLines.length + 1;
+        let decisionNodeIdForThisBlock = null;
 
-        yaml += `    - id: "${node.id}"\n`;
+        push(`    - id: "${node.id}"`);
         const text = (node.data.text || '').replace(/"/g, '\\"').replace(/\n/g, '\\n');
         if (text) {
-            yaml += `      text: "${text}"\n`;
+            push(`      text: "${text}"`);
         }
 
         if (node.type === 'condition') {
@@ -91,7 +100,7 @@ function generateYaml(nodes, edges) {
                 }
 
                 if (actionString) {
-                    yaml += `      action: "${actionString}"\n`;
+                    push(`      action: "${actionString}"`);
                 }
             }
         }
@@ -101,12 +110,13 @@ function generateYaml(nodes, edges) {
             const nextNode = nodesMap.get(outgoingEdges[0].target);
             if (nextNode) {
                 if (nextNode.type === 'exit') {
-                    yaml += `      next: "End"\n`;
+                    push(`      next: "End"`);
                 } else if (nextNode.type === 'decision') {
-                    yaml += `      decision:\n`;
-                    yaml += `        id: "${nextNode.id}"\n`;
+                    decisionNodeIdForThisBlock = nextNode.id;
+                    push(`      decision:`);
+                    push(`        id: "${nextNode.id}"`);
                     const condition = (node.data.condition || '').replace(/"/g, '\\"');
-                    yaml += `        condition: "${condition}"\n`;
+                    push(`        condition: "${condition}"`);
 
                     const decisionEdges = edgesBySource[nextNode.id] || [];
                     for (const edge of decisionEdges) {
@@ -115,7 +125,7 @@ function generateYaml(nodes, edges) {
                             const targetId = targetNode.type === 'exit' ? 'End' : edge.target;
                             if (targetId) {
                                 const label = (edge.data?.label || 'option').toLowerCase().replace(/ /g, '_');
-                                yaml += `        ${label}: "${targetId}"\n`;
+                                push(`        ${label}: "${targetId}"`);
                             }
                         }
                     }
@@ -123,17 +133,30 @@ function generateYaml(nodes, edges) {
                 } else if (outgoingEdges.length === 1) {
                     const targetId = outgoingEdges[0].target;
                     if (targetId) {
-                        yaml += `      next: "${targetId}"\n`;
+                        push(`      next: "${targetId}"`);
                     }
                 }
             }
         }
+        
+        const endLine = yamlLines.length;
+        lineMap.set(node.id, { start: startLine, end: endLine });
+        if(decisionNodeIdForThisBlock) {
+            lineMap.set(decisionNodeIdForThisBlock, { start: startLine, end: endLine });
+        }
 
         processedNodeIds.add(node.id);
     }
-
-    yaml += `    - id: "End"\n`;
-    yaml += `      text: "Fin del proceso"\n`;
+    
+    const endNodeStartLine = yamlLines.length + 1;
+    push(`    - id: "End"`);
+    push(`      text: "Fin del proceso"`);
+    const endNodeEndLine = yamlLines.length;
+    
+    const exitNodes = nodes.filter(n => n.type === 'exit');
+    for (const exitNode of exitNodes) {
+        lineMap.set(exitNode.id, { start: endNodeStartLine, end: endNodeEndLine });
+    }
 
     const fileNames = new Set();
     nodes.forEach(node => {
@@ -143,12 +166,13 @@ function generateYaml(nodes, edges) {
     });
 
     if (fileNames.size > 0) {
+        push(``);
         const sortedFileNames = Array.from(fileNames).sort();
-        const fileComments = sortedFileNames.map(fileName => `# - ${fileName}`).join('\n');
-        yaml += `\n${fileComments}`;
+        const fileComments = sortedFileNames.map(fileName => `# - ${fileName}`);
+        fileComments.forEach(line => push(line));
     }
 
-    return yaml;
+    return { yamlString: yamlLines.join('\n'), lineMap };
 }
 
 const getLayoutedElements = (nodes, edges, direction = 'TB') => {
@@ -418,11 +442,13 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData }, ref) => {
 
     useImperativeHandle(ref, () => ({
         getFlowData() {
+            const { yamlString, lineMap } = generateYaml(nodes, edges);
             return {
                 nodes,
                 edges,
                 viewport: reactFlowInstance?.getViewport(),
-                yaml: generateYaml(nodes, edges),
+                yaml: yamlString,
+                lineMap,
             };
         }
     }));
@@ -470,8 +496,9 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData }, ref) => {
 
     useEffect(() => {
         if (onYamlChange) {
-            const yamlString = generateYaml(nodes, edges);
-            onYamlChange(yamlString);
+            const { yamlString, lineMap } = generateYaml(nodes, edges);
+            const currentSelectedNodeIds = new Set(nodes.filter(n => n.selected).map(n => n.id));
+            onYamlChange(yamlString, lineMap, currentSelectedNodeIds);
         }
     }, [nodes, edges, onYamlChange]);
 

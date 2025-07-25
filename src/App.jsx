@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useCallback } from 'react';
 import yaml from 'js-yaml';
 import JSZip from 'jszip';
 import './App.css';
@@ -7,14 +7,22 @@ import Sidebar from './components/Sidebar';
 
 function App() {
   const [yamlString, setYamlString] = useState('');
+  const [lineMap, setLineMap] = useState(null);
+  const [selectedNodeIds, setSelectedNodeIds] = useState(null);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
-  const [sidebarWidth, setSidebarWidth] = useState(300);
+  const [sidebarWidth, setSidebarWidth] = useState(400);
   const [initialData, setInitialData] = useState(null);
   const flowDiagramRef = useRef(null);
 
   const handleToggleSidebar = () => {
     setIsSidebarVisible(prev => !prev);
   };
+
+  const onYamlChange = useCallback((newYaml, newLineMap, newSelectedNodeIds) => {
+    setYamlString(newYaml);
+    setLineMap(newLineMap);
+    setSelectedNodeIds(newSelectedNodeIds);
+  }, []);
 
   const handleDownloadZip = async () => {
     if (!flowDiagramRef.current) return;
@@ -126,10 +134,12 @@ function App() {
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <div style={{ flexGrow: 1, height: '100%' }}>
-        <FlowDiagram ref={flowDiagramRef} onYamlChange={setYamlString} initialData={initialData} />
+        <FlowDiagram ref={flowDiagramRef} onYamlChange={onYamlChange} initialData={initialData} />
       </div>
       <Sidebar
         yaml={yamlString}
+        lineMap={lineMap}
+        selectedNodeIds={selectedNodeIds}
         isVisible={isSidebarVisible}
         width={sidebarWidth}
         onToggle={handleToggleSidebar}
