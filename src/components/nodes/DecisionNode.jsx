@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
 
@@ -6,12 +6,31 @@ const DecisionNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [options, setOptions] = useState(data.options || ['Yes', 'No']);
+    const nodeRef = useRef(null);
 
     useEffect(() => {
         if (isMenuOpen) {
             setOptions(data.options || ['Yes', 'No']);
         }
     }, [isMenuOpen, data.options]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (nodeRef.current && !nodeRef.current.contains(event.target)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        } else {
+            document.removeEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMenuOpen]);
 
     const handleAddOption = () => setOptions([...options, `Option ${options.length + 1}`]);
     const handleRemoveOption = (index) => setOptions(options.filter((_, i) => i !== index));
@@ -30,6 +49,7 @@ const DecisionNode = ({ id, data, selected }) => {
 
     return (
         <div
+            ref={nodeRef}
             onDoubleClick={() => setIsMenuOpen(true)}
             style={{
                 width: '100%',

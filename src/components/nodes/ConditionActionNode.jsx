@@ -1,15 +1,52 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
+
+const sanitizeFileName = (name) => {
+    if (!name) return '';
+    const parts = name.split('.');
+    const extension = parts.length > 1 ? '.' + parts.pop() : '';
+    let baseName = parts.join('.');
+
+    // Remove diacritics (e.g., ñ -> n, é -> e)
+    let sanitizedBaseName = baseName.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    // 1. "Remove" punctuation by replacing it with a space.
+    // 3. Then, replace all whitespace sequences with a single underscore.
+    // This handles instruction "replace all spaces with underscoresn only after all punctuacino has been removed"
+    sanitizedBaseName = sanitizedBaseName.replace(/[^\w\s]/g, ' ').trim().replace(/\s+/g, '_');
+    
+    // 2. Lowercase all letters in the filename.
+    return (sanitizedBaseName + extension).toLowerCase();
+};
 
 const ConditionActionNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const nodeRef = useRef(null);
 
     const [text, setText] = useState(data.text || '');
     const [condition, setCondition] = useState(data.condition || '');
     const [action, setAction] = useState('none');
     const [file, setFile] = useState(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (nodeRef.current && !nodeRef.current.contains(event.target)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        } else {
+            document.removeEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMenuOpen]);
 
     useEffect(() => {
         if (isMenuOpen) {
@@ -29,7 +66,10 @@ const ConditionActionNode = ({ id, data, selected }) => {
 
     const onFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0]);
+            const originalFile = e.target.files[0];
+            const sanitizedName = sanitizeFileName(originalFile.name);
+            const newFile = new File([originalFile], sanitizedName, { type: originalFile.type });
+            setFile(newFile);
         }
     };
     
@@ -37,7 +77,10 @@ const ConditionActionNode = ({ id, data, selected }) => {
         e.preventDefault();
         e.stopPropagation();
         if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-            setFile(e.dataTransfer.files[0]);
+            const originalFile = e.dataTransfer.files[0];
+            const sanitizedName = sanitizeFileName(originalFile.name);
+            const newFile = new File([originalFile], sanitizedName, { type: originalFile.type });
+            setFile(newFile);
         }
     }, []);
 
@@ -141,7 +184,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
     };
 
     return (
-        <div style={nodeStyle} onDoubleClick={() => setIsMenuOpen(true)}>
+        <div ref={nodeRef} style={nodeStyle} onDoubleClick={() => setIsMenuOpen(true)}>
             {renderActionIcon()}
             <NodeResizer isVisible={selected} minWidth={160} minHeight={120} keepAspectRatio lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }} />

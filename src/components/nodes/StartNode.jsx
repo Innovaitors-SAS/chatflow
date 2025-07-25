@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
 
@@ -6,6 +6,25 @@ const StartNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [text, setText] = useState(data.text || '');
+    const nodeRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (nodeRef.current && !nodeRef.current.contains(event.target)) {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        } else {
+            document.removeEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isMenuOpen]);
 
     useEffect(() => {
         if (isMenuOpen) {
@@ -47,7 +66,7 @@ const StartNode = ({ id, data, selected }) => {
     };
 
     return (
-        <div style={nodeStyle} onDoubleClick={() => setIsMenuOpen(true)}>
+        <div ref={nodeRef} style={nodeStyle} onDoubleClick={() => setIsMenuOpen(true)}>
             <NodeResizer isVisible={selected} minWidth={80} minHeight={80} keepAspectRatio lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
             
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ position: 'absolute', top: 10, right: 10, zIndex: 10, cursor: 'pointer', background: 'none', border: 'none', fontSize: '16px', color: 'var(--foreground)' }}>
