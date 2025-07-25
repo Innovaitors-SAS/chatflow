@@ -66,8 +66,8 @@
 
 /* Selection Box Style */
 .react-flow__selection {
-    background-color: rgba(59, 130, 246, 0.1);
-    border: 1px dotted rgba(59, 130, 246, 0.8);
+    background-color: rgba(var(--ring-rgb), 0.1);
+    border: 1px dotted rgba(var(--ring-rgb), 0.8);
 }
 
 /* YAML Viewer Styles */

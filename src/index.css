@@ -17,11 +17,11 @@
   --destructive-foreground: #fafafa;
   --border: #3f3f46; /* zinc-700 */
   --input: #3f3f46;
-  --ring: #3b82f6; /* blue-500 */
+  --ring: #8b5cf6; /* violet-500 */
   --radius: 0.5rem;
 
   /* Added for sidebar */
-  --ring-rgb: 59, 130, 246;
+  --ring-rgb: 139, 92, 246;
   --sidebar-bg: rgba(24, 24, 27, 0.75); /* semi-transparent zinc-900 */
   --code-font: 'JetBrains Mono', 'Fira Code', monospace;
 

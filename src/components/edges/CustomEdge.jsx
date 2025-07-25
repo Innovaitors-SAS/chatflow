@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getSmoothStepPath, useReactFlow } from 'reactflow';
 
-const CustomEdge = ({ id, source, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, data, selected, markerEnd }) => {
+const CustomEdge = ({ id, source, target, sourceX, sourceY, sourcePosition, targetX, targetY, targetPosition, data, selected, markerEnd }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [label, setLabel] = useState(data.label || '');
     const { setEdges, getNode } = useReactFlow();
@@ -20,7 +20,7 @@ const CustomEdge = ({ id, source, sourceX, sourceY, sourcePosition, targetX, tar
         targetX,
         targetY,
         targetPosition,
-        borderRadius: 5
+        borderRadius: 5,
     });
 
     const handleSave = () => {
