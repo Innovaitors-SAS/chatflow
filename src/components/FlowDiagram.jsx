@@ -126,7 +126,7 @@ function generateYaml(nodes, edges) {
                                 if (isNumeric) {
                                     push(`        "${originalLabel}": "${targetId}"`);
                                 } else {
-                                    const label = originalLabel.toLowerCase().replace(/ /g, '_');
+                                    const label = originalLabel.replace(/ /g, '_');
                                     push(`        ${label}: "${targetId}"`);
                                 }
                             }
