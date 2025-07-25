@@ -53,7 +53,10 @@ const Chatbot = ({ onClose, flowData, onPathUpdate }) => {
         const startNode = nodes.find(n => n.type === 'start');
         if (startNode) {
             addMessage('bot', 'Hello! Starting the workflow simulation.');
-            onPathUpdate({ nodes: new Set([startNode.id]), edges: new Set() });
+            onPathUpdate(p => ({
+                nodes: new Set([...p.nodes, startNode.id]),
+                edges: p.edges,
+            }));
 
             const nextNodeId = findNextNodeId(startNode.id);
             if (nextNodeId) {

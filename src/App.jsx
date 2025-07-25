@@ -10,7 +10,7 @@ function App() {
   const [yamlString, setYamlString] = useState('');
   const [lineMap, setLineMap] = useState(null);
   const [selectedNodeIds, setSelectedNodeIds] = useState(null);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(400);
   const [initialData, setInitialData] = useState(null);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
@@ -142,16 +142,14 @@ function App() {
 
   const handleTestChatbot = () => {
       if (flowDiagramRef.current?.getFlowData()) {
+          setSessionPath({ nodes: new Set(), edges: new Set() });
           setIsChatbotOpen(true);
       }
   };
 
   const handleCloseChatbot = () => {
       setIsChatbotOpen(false);
-      setTestedPath(prev => ({
-        nodes: new Set([...prev.nodes, ...sessionPath.nodes]),
-        edges: new Set([...prev.edges, ...sessionPath.edges]),
-      }));
+      setTestedPath({ nodes: new Set(), edges: new Set() });
       setSessionPath({ nodes: new Set(), edges: new Set() });
   };
 
