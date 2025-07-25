@@ -22,7 +22,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
 
     const handleSave = () => {
         setNodes(nodes => nodes.map(node =>
-            node.id === id ? { ...node, data: { ...node.data, text, condition, action, file: file ? { name: file.name, type: file.type, size: file.size } : null } } : node
+            node.id === id ? { ...node, data: { ...node.data, text, condition, action, file } } : node
         ));
         setIsMenuOpen(false);
     };

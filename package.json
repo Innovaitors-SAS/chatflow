@@ -13,6 +13,7 @@
     "@reactflow/node-resizer": "^2.2.14",
     "dagre": "^0.8.5",
     "js-yaml": "^4.1.0",
+    "jszip": "^3.10.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "reactflow": "^11.11.4",

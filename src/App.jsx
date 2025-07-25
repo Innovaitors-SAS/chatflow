@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import yaml from 'js-yaml';
+import JSZip from 'jszip';
 import './App.css';
 import FlowDiagram from './components/FlowDiagram';
 import Sidebar from './components/Sidebar';
@@ -9,56 +10,122 @@ function App() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [initialData, setInitialData] = useState(null);
+  const flowDiagramRef = useRef(null);
 
   const handleToggleSidebar = () => {
     setIsSidebarVisible(prev => !prev);
   };
 
-  const handleDownloadYaml = () => {
-    if (!yamlString) return;
+  const handleDownloadZip = async () => {
+    if (!flowDiagramRef.current) return;
 
-    const blob = new Blob([yamlString], { type: 'text/yaml' });
-    const url = URL.createObjectURL(blob);
+    const { nodes, viewport, yaml: currentYaml } = flowDiagramRef.current.getFlowData();
+    if (!currentYaml) return;
+
+    const zip = new JSZip();
+
+    // 1. Add flowchart.yml
+    zip.file('flowchart.yml', currentYaml);
+
+    // 2. Add graph_layout_metadata.json
+    const layoutData = {
+        nodes: nodes.map(n => ({
+            id: n.id,
+            position: n.position,
+            width: n.width,
+            height: n.height,
+        })),
+        viewport,
+    };
+    zip.file('graph_layout_metadata.json', JSON.stringify(layoutData, null, 2));
+
+    // 3. Add files from nodes to extra_metadata/
+    const extraMetadata = zip.folder('extra_metadata');
+    for (const node of nodes) {
+        if (node.data?.action === 'Send File' && node.data?.file instanceof File) {
+            extraMetadata.file(node.data.file.name, node.data.file);
+        }
+    }
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(zipBlob);
     const a = document.createElement('a');
     a.href = url;
-
-    const match = yamlString.match(/id: "graph_alarm_(\w+)"/);
+    
+    const match = currentYaml.match(/id: "graph_alarm_(\w+)"/);
     const alarmCode = match ? match[1] : 'flow';
-    a.download = `${alarmCode}.yaml`;
-
+    a.download = `${alarmCode}_flow.zip`;
+    
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        try {
-            const yamlContent = event.target.result;
-            const data = yaml.load(yamlContent);
-            if (data && data.graph) {
-                setInitialData(data);
-            } else {
-                alert('Invalid YAML structure. Expected a "graph" property.');
-            }
-        } catch (err) {
-            console.error("Error parsing YAML:", err);
-            alert("Failed to parse YAML file. Please check its format.");
+    const zip = new JSZip();
+    try {
+        const content = await zip.loadAsync(file);
+        
+        const yamlFile = content.file('flowchart.yml');
+        const layoutFile = content.file('graph_layout_metadata.json');
+        
+        if (!yamlFile) {
+            alert('ZIP archive must contain a "flowchart.yml" file.');
+            return;
         }
-    };
-    reader.readAsText(file);
-    e.target.value = ''; // Reset file input
+
+        const yamlContent = await yamlFile.async('string');
+        const yamlData = yaml.load(yamlContent);
+
+        if (!yamlData || !yamlData.graph) {
+            alert('Invalid YAML structure. Expected a "graph" property.');
+            return;
+        }
+        
+        let layoutData = null;
+        if (layoutFile) {
+            const layoutContent = await layoutFile.async('string');
+            layoutData = JSON.parse(layoutContent);
+        }
+
+        const filesData = new Map();
+        const extraMetadataFolder = content.folder('extra_metadata');
+        if(extraMetadataFolder){
+            const filePromises = [];
+            extraMetadataFolder.forEach((_relativePath, zipEntry) => {
+                if (!zipEntry.dir) {
+                    const fileName = zipEntry.name.split('/').pop();
+                    const promise = zipEntry.async('blob').then(blob => {
+                        filesData.set(fileName, new File([blob], fileName, { type: blob.type }));
+                    });
+                    filePromises.push(promise);
+                }
+            });
+            await Promise.all(filePromises);
+        }
+
+        setInitialData({
+            yaml: yamlData,
+            layout: layoutData,
+            files: filesData,
+        });
+
+    } catch (err) {
+        console.error("Error processing ZIP file:", err);
+        alert("Failed to process ZIP file. It may be corrupt or not a valid ZIP archive.");
+    } finally {
+      e.target.value = ''; // Reset file input
+    }
   };
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <div style={{ flexGrow: 1, height: '100%' }}>
-        <FlowDiagram onYamlChange={setYamlString} initialData={initialData} />
+        <FlowDiagram ref={flowDiagramRef} onYamlChange={setYamlString} initialData={initialData} />
       </div>
       <Sidebar
         yaml={yamlString}
@@ -68,15 +135,15 @@ function App() {
         onWidthChange={setSidebarWidth}
       />
       <input
-          id="yaml-upload"
+          id="zip-upload"
           type="file"
-          accept=".yml,.yaml"
+          accept=".zip"
           onChange={handleFileUpload}
           style={{ display: 'none' }}
       />
        <button
-        title="Upload YAML"
-        onClick={() => document.getElementById('yaml-upload').click()}
+        title="Upload Flow (ZIP)"
+        onClick={() => document.getElementById('zip-upload').click()}
         style={{
           position: 'fixed',
           bottom: '24px',
@@ -100,8 +167,8 @@ function App() {
       </button>
 
       <button
-        title="Download YAML"
-        onClick={handleDownloadYaml}
+        title="Download Flow (ZIP)"
+        onClick={handleDownloadZip}
         style={{
           position: 'fixed',
           bottom: '24px',
