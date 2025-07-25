@@ -19,7 +19,7 @@ function App() {
   const handleDownloadZip = async () => {
     if (!flowDiagramRef.current) return;
 
-    const { nodes, viewport, yaml: currentYaml } = flowDiagramRef.current.getFlowData();
+    const { nodes, edges, viewport, yaml: currentYaml } = flowDiagramRef.current.getFlowData();
     if (!currentYaml) return;
 
     const zip = new JSZip();
@@ -35,6 +35,7 @@ function App() {
             width: n.width,
             height: n.height,
         })),
+        edges: edges,
         viewport,
     };
     zip.file('graph_layout_metadata.json', JSON.stringify(layoutData, null, 2));
