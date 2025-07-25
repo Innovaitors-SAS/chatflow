@@ -1,28 +1,28 @@
 :root {
-  --background: #ffffff; /* white */
-  --foreground: #09090b; /* zinc-950 */
-  --card: #ffffff;
-  --card-foreground: #09090b;
-  --popover: #ffffff;
-  --popover-foreground: #09090b;
-  --primary: #09090b;
-  --primary-foreground: #fafafa;
-  --secondary: #f4f4f5; /* zinc-100 */
-  --secondary-foreground: #09090b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a; /* zinc-500 */
-  --accent: #f4f4f5;
-  --accent-foreground: #09090b;
+  --background: #09090b; /* zinc-950 */
+  --foreground: #fafafa; /* zinc-50 */
+  --card: #18181b; /* zinc-900 */
+  --card-foreground: #fafafa;
+  --popover: #18181b;
+  --popover-foreground: #fafafa;
+  --primary: #fafafa;
+  --primary-foreground: #09090b;
+  --secondary: #27272a; /* zinc-800 */
+  --secondary-foreground: #fafafa;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa; /* zinc-400 */
+  --accent: #27272a;
+  --accent-foreground: #fafafa;
   --destructive: #dc2626; /* red-600 */
   --destructive-foreground: #fafafa;
-  --border: #e4e4e7; /* zinc-200 */
-  --input: #e4e4e7;
+  --border: #3f3f46; /* zinc-700 */
+  --input: #3f3f46;
   --ring: #3b82f6; /* blue-500 */
   --radius: 0.5rem;
 
   /* Added for sidebar */
   --ring-rgb: 59, 130, 246;
-  --sidebar-bg: rgba(244, 244, 245, 0.75); /* semi-transparent zinc-100 */
+  --sidebar-bg: rgba(24, 24, 27, 0.75); /* semi-transparent zinc-900 */
   --code-font: 'JetBrains Mono', 'Fira Code', monospace;
 
 

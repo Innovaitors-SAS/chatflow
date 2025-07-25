@@ -92,15 +92,10 @@ function generateYaml(nodes, edges) {
 
         if (node.type === 'condition') {
             if (node.data.action && node.data.action !== 'none') {
-                let actionString;
                 if (node.data.action === 'Create Ticket') {
-                    actionString = 'create_ticket_in_db';
+                    push(`      action: "create_ticket_in_db"`);
                 } else if (node.data.action === 'Send File' && node.data.file?.name) {
-                    actionString = `Enviar archivo ${node.data.file.name}`;
-                }
-
-                if (actionString) {
-                    push(`      action: "${actionString}"`);
+                    push(`      action: Enviar archivo ${node.data.file.name}`);
                 }
             }
         }
@@ -124,8 +119,16 @@ function generateYaml(nodes, edges) {
                         if (targetNode) {
                             const targetId = targetNode.type === 'exit' ? 'End' : edge.target;
                             if (targetId) {
-                                const label = (edge.data?.label || 'option').toLowerCase().replace(/ /g, '_');
-                                push(`        ${label}: "${targetId}"`);
+                                const originalLabel = (edge.data?.label || 'option');
+                                // check if original label is a number before any transformation
+                                const isNumeric = /^-?\d+(\.\d+)?$/.test(originalLabel);
+                                
+                                if (isNumeric) {
+                                    push(`        "${originalLabel}": "${targetId}"`);
+                                } else {
+                                    const label = originalLabel.toLowerCase().replace(/ /g, '_');
+                                    push(`        ${label}: "${targetId}"`);
+                                }
                             }
                         }
                     }
