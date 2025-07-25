@@ -4,6 +4,7 @@ import JSZip from 'jszip';
 import './App.css';
 import FlowDiagram from './components/FlowDiagram';
 import Sidebar from './components/Sidebar';
+import Chatbot from './components/chatbot/Chatbot';
 
 function App() {
   const [yamlString, setYamlString] = useState('');
@@ -12,6 +13,7 @@ function App() {
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [sidebarWidth, setSidebarWidth] = useState(400);
   const [initialData, setInitialData] = useState(null);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   const flowDiagramRef = useRef(null);
 
   const handleToggleSidebar = () => {
@@ -131,6 +133,12 @@ function App() {
     }
   };
 
+  const handleTestChatbot = () => {
+      if (flowDiagramRef.current?.getFlowData()) {
+          setIsChatbotOpen(true);
+      }
+  };
+
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <div style={{ flexGrow: 1, height: '100%' }}>
@@ -152,6 +160,31 @@ function App() {
           onChange={handleFileUpload}
           style={{ display: 'none' }}
       />
+      <button
+        title="Test Chatbot"
+        onClick={handleTestChatbot}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12}px`,
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          background: 'var(--primary)',
+          color: 'var(--primary-foreground)',
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1001,
+          transition: 'right 0.3s ease-in-out'
+        }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+      </button>
+
        <button
         title="Upload Flow (ZIP)"
         onClick={() => document.getElementById('zip-upload').click()}
@@ -227,6 +260,12 @@ function App() {
         >
           YAML
         </button>
+      )}
+      {isChatbotOpen && (
+          <Chatbot
+              onClose={() => setIsChatbotOpen(false)}
+              flowData={flowDiagramRef.current?.getFlowData()}
+          />
       )}
     </div>
   );
