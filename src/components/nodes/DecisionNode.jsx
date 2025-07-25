@@ -56,10 +56,10 @@ const DecisionNode = ({ id, data, selected }) => {
                 height: '100%',
                 backgroundColor: 'var(--card)',
                 transform: 'rotate(45deg)',
-                border: `4px solid ${selected ? 'var(--ring)' : 'var(--foreground)'}`,
+                border: `4px solid ${data.isTested ? 'var(--tested)' : (selected ? 'var(--ring)' : 'var(--foreground)')}`,
                 color: 'var(--card-foreground)',
                 opacity: data.isDimmed ? 0.3 : 1,
-                transition: 'opacity 0.2s',
+                transition: 'opacity 0.2s, border-color 0.2s',
                 pointerEvents: data.isDimmed ? 'none' : 'auto',
                 position: 'relative'
             }}

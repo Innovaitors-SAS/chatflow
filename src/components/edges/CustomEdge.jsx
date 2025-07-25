@@ -37,7 +37,7 @@ const CustomEdge = ({ id, source, target, sourceX, sourceY, sourcePosition, targ
     };
 
     const pathStyle = {
-        stroke: selected ? 'var(--ring)' : 'var(--foreground)',
+        stroke: data.isTested ? 'var(--tested)' : (selected ? 'var(--ring)' : 'var(--foreground)'),
         strokeWidth: selected ? 5 : 3,
         fill: 'none',
         strokeDasharray: '7 7',
@@ -117,13 +117,15 @@ const CustomEdge = ({ id, source, target, sourceX, sourceY, sourcePosition, targ
                         label ? (
                             <div
                                 style={{
-                                    background: 'var(--secondary)',
+                                    background: data.isTested ? 'var(--tested)' : 'var(--secondary)',
+                                    color: data.isTested ? 'var(--primary-foreground)' : 'var(--foreground)',
                                     padding: '4px 8px',
                                     borderRadius: 4,
                                     border: '1px solid var(--border)',
                                     fontSize: 12,
                                     cursor: isDecisionEdge ? 'default' : 'pointer',
-                                    textAlign: 'center'
+                                    textAlign: 'center',
+                                    transition: 'background-color 0.2s, color 0.2s'
                                 }}
                             >
                                 {label}

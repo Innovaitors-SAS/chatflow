@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import ChatMessage from './ChatMessage';
 
-const Chatbot = ({ onClose, flowData }) => {
+const Chatbot = ({ onClose, flowData, onPathUpdate }) => {
     const { nodes, edges } = flowData;
     const [messages, setMessages] = useState([]);
     const [isFinished, setIsFinished] = useState(false);
@@ -53,8 +53,19 @@ const Chatbot = ({ onClose, flowData }) => {
         const startNode = nodes.find(n => n.type === 'start');
         if (startNode) {
             addMessage('bot', 'Hello! Starting the workflow simulation.');
+            onPathUpdate({ nodes: new Set([startNode.id]), edges: new Set() });
+
             const nextNodeId = findNextNodeId(startNode.id);
             if (nextNodeId) {
+                const edge = (edgesBySource[startNode.id] || [])[0];
+                if (edge) {
+                    onPathUpdate(p => ({
+                        nodes: new Set([...p.nodes, nextNodeId]),
+                        edges: new Set([...p.edges, edge.id])
+                    }));
+                } else {
+                    onPathUpdate(p => ({ ...p, nodes: new Set([...p.nodes, nextNodeId]) }));
+                }
                 setCurrentNodeId(nextNodeId);
             } else {
                 addMessage('bot', 'No starting point found after start node. Conversation ended.');
@@ -89,6 +100,15 @@ const Chatbot = ({ onClose, flowData }) => {
 
                 const nextNodeId = findNextNodeId(node.id);
                 if (nextNodeId) {
+                    const edge = (edgesBySource[node.id] || [])[0];
+                    if (edge) {
+                        onPathUpdate(p => ({
+                            nodes: new Set([...p.nodes, nextNodeId]),
+                            edges: new Set([...p.edges, edge.id])
+                        }));
+                    } else {
+                        onPathUpdate(p => ({ ...p, nodes: new Set([...p.nodes, nextNodeId]) }));
+                    }
                     setCurrentNodeId(nextNodeId);
                 } else {
                     addMessage('bot', 'The flow ends here.');
@@ -132,6 +152,10 @@ const Chatbot = ({ onClose, flowData }) => {
         const selectedEdge = outgoingEdges.find(e => e.data?.label === option);
 
         if (selectedEdge) {
+            onPathUpdate(p => ({
+                nodes: new Set([...p.nodes, selectedEdge.target]),
+                edges: new Set([...p.edges, selectedEdge.id])
+            }));
             setCurrentNodeId(selectedEdge.target);
         } else {
             addMessage('bot', `I'm sorry, I can't find a path for "${option}". The flow ends here.`);
@@ -140,25 +164,23 @@ const Chatbot = ({ onClose, flowData }) => {
     };
 
     return (
-        <div className="chatbot-overlay" onClick={onClose}>
-            <div className="chatbot-container" onClick={(e) => e.stopPropagation()}>
-                <div className="chatbot-header">
-                    <h3>Chatbot Test</h3>
-                    <button onClick={onClose} title="Close Chat">&times;</button>
-                </div>
-                <div className="chatbot-messages">
-                    {messages.map(msg => (
-                        <ChatMessage key={msg.id} message={msg} onOptionSelect={handleOptionSelect} />
-                    ))}
-                    <div ref={messagesEndRef} />
-                </div>
-                {isFinished && (
-                    <div className="chatbot-footer">
-                        <button className="restart" onClick={startChat}>Restart</button>
-                        <button className="close" onClick={onClose}>Close</button>
-                    </div>
-                )}
+        <div className="chatbot-container" onClick={(e) => e.stopPropagation()}>
+            <div className="chatbot-header">
+                <h3>Chatbot Test</h3>
+                <button onClick={onClose} title="Close Chat">&times;</button>
             </div>
+            <div className="chatbot-messages">
+                {messages.map(msg => (
+                    <ChatMessage key={msg.id} message={msg} onOptionSelect={handleOptionSelect} />
+                ))}
+                <div ref={messagesEndRef} />
+            </div>
+            {isFinished && (
+                <div className="chatbot-footer">
+                    <button className="restart" onClick={startChat}>Restart</button>
+                    <button className="close" onClick={onClose}>Close</button>
+                </div>
+            )}
         </div>
     );
 };

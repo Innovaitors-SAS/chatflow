@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react';
+import { useRef, useState, useCallback, useMemo } from 'react';
 import yaml from 'js-yaml';
 import JSZip from 'jszip';
 import './App.css';
@@ -14,7 +14,14 @@ function App() {
   const [sidebarWidth, setSidebarWidth] = useState(400);
   const [initialData, setInitialData] = useState(null);
   const [isChatbotOpen, setIsChatbotOpen] = useState(false);
+  const [testedPath, setTestedPath] = useState({ nodes: new Set(), edges: new Set() });
+  const [sessionPath, setSessionPath] = useState({ nodes: new Set(), edges: new Set() });
   const flowDiagramRef = useRef(null);
+
+  const totalHighlightedPath = useMemo(() => ({
+    nodes: new Set([...testedPath.nodes, ...sessionPath.nodes]),
+    edges: new Set([...testedPath.edges, ...sessionPath.edges])
+  }), [testedPath, sessionPath]);
 
   const handleToggleSidebar = () => {
     setIsSidebarVisible(prev => !prev);
@@ -139,10 +146,19 @@ function App() {
       }
   };
 
+  const handleCloseChatbot = () => {
+      setIsChatbotOpen(false);
+      setTestedPath(prev => ({
+        nodes: new Set([...prev.nodes, ...sessionPath.nodes]),
+        edges: new Set([...prev.edges, ...sessionPath.edges]),
+      }));
+      setSessionPath({ nodes: new Set(), edges: new Set() });
+  };
+
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <div style={{ flexGrow: 1, height: '100%' }}>
-        <FlowDiagram ref={flowDiagramRef} onYamlChange={onYamlChange} initialData={initialData} />
+        <FlowDiagram ref={flowDiagramRef} onYamlChange={onYamlChange} initialData={initialData} testedPath={totalHighlightedPath} />
       </div>
       <Sidebar
         yaml={yamlString}
@@ -263,8 +279,9 @@ function App() {
       )}
       {isChatbotOpen && (
           <Chatbot
-              onClose={() => setIsChatbotOpen(false)}
+              onClose={handleCloseChatbot}
               flowData={flowDiagramRef.current?.getFlowData()}
+              onPathUpdate={setSessionPath}
           />
       )}
     </div>

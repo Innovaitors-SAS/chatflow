@@ -434,7 +434,7 @@ const applyLayout = (nodes, layoutNodes) => {
 };
 
 
-const FlowDiagram = forwardRef(({ onYamlChange, initialData }, ref) => {
+const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath }, ref) => {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
@@ -461,6 +461,13 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData }, ref) => {
         setNodes(layouted.nodes);
         setEdges(layouted.edges);
     }, [nodes, edges, setNodes, setEdges]);
+
+    useEffect(() => {
+        if (testedPath) {
+            setNodes((nds) => nds.map((n) => ({ ...n, data: { ...n.data, isTested: testedPath.nodes.has(n.id) } })));
+            setEdges((eds) => eds.map((e) => ({ ...e, data: { ...e.data, isTested: testedPath.edges.has(e.id) } })));
+        }
+    }, [testedPath, setNodes, setEdges]);
 
     useEffect(() => {
         if (initialData?.yaml) {
