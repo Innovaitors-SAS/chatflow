@@ -47,7 +47,7 @@ const GoToExitNode = ({ id, data, selected }) => {
     };
 
     return (
-        <div style={nodeStyle}>
+        <div style={nodeStyle} onDoubleClick={() => setIsMenuOpen(true)}>
             <NodeResizer isVisible={selected} keepAspectRatio minWidth={64} minHeight={64} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }} />
             

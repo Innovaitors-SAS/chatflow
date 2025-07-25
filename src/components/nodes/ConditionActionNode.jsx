@@ -46,6 +46,56 @@ const ConditionActionNode = ({ id, data, selected }) => {
         e.stopPropagation();
     }, []);
 
+    const renderActionIcon = () => {
+        let icon = null;
+        let title = '';
+
+        if (data.action === 'Create Ticket') {
+            icon = (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <ellipse cx="12" cy="5" rx="9" ry="3" />
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+                </svg>
+            );
+            title = 'Action: Create Ticket';
+        } else if (data.action === 'Send File') {
+            icon = (
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                    <polyline points="14 2 14 8 20 8" />
+                </svg>
+            );
+            title = 'Action: Send File';
+        }
+
+        if (!icon) return null;
+
+        return (
+            <div
+                title={title}
+                style={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    zIndex: 10,
+                    width: 24,
+                    height: 24,
+                    background: 'var(--secondary)',
+                    color: 'var(--foreground)',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px solid var(--border)',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                }}
+            >
+                {icon}
+            </div>
+        );
+    };
+
     const nodeStyle = {
         width: '100%',
         height: '100%',
@@ -91,7 +141,8 @@ const ConditionActionNode = ({ id, data, selected }) => {
     };
 
     return (
-        <div style={nodeStyle}>
+        <div style={nodeStyle} onDoubleClick={() => setIsMenuOpen(true)}>
+            {renderActionIcon()}
             <NodeResizer isVisible={selected} minWidth={160} minHeight={120} keepAspectRatio lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }} />
 

@@ -30,6 +30,7 @@ const DecisionNode = ({ id, data, selected }) => {
 
     return (
         <div
+            onDoubleClick={() => setIsMenuOpen(true)}
             style={{
                 width: '100%',
                 height: '100%',

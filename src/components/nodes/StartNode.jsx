@@ -47,7 +47,7 @@ const StartNode = ({ id, data, selected }) => {
     };
 
     return (
-        <div style={nodeStyle}>
+        <div style={nodeStyle} onDoubleClick={() => setIsMenuOpen(true)}>
             <NodeResizer isVisible={selected} minWidth={80} minHeight={80} keepAspectRatio lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
             
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ position: 'absolute', top: 10, right: 10, zIndex: 10, cursor: 'pointer', background: 'none', border: 'none', fontSize: '16px', color: 'var(--foreground)' }}>
