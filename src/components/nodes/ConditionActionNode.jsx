@@ -221,6 +221,8 @@ const ConditionActionNode = ({ id, data, selected }) => {
                             onChange={(e) => setText(e.target.value)}
                             placeholder="Enter condition description..."
                             style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+                            spellCheck="true"
+                            lang="es"
                         />
                     </div>
 
@@ -232,6 +234,8 @@ const ConditionActionNode = ({ id, data, selected }) => {
                             onChange={(e) => setCondition(e.target.value)}
                             placeholder="Enter condition"
                             style={inputStyle}
+                            spellCheck="true"
+                            lang="es"
                         />
                     </div>
 

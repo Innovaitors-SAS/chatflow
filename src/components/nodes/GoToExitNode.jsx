@@ -99,6 +99,8 @@ const GoToExitNode = ({ id, data, selected }) => {
                         onChange={(e) => setText(e.target.value)}
                         placeholder="Exit text"
                         style={{ padding: 4, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--foreground)', width: '100%', boxSizing: 'border-box' }}
+                        spellCheck="true"
+                        lang="es"
                     />
                     <button
                         onClick={handleSave}

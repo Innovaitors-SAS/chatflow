@@ -97,6 +97,8 @@ const CustomEdge = ({ id, source, target, sourceX, sourceY, sourcePosition, targ
                                     background: 'var(--card)',
                                     color: 'var(--foreground)'
                                 }}
+                                spellCheck="true"
+                                lang="es"
                             />
                             <button
                                 onClick={handleSave}

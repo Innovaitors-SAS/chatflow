@@ -130,6 +130,8 @@ const DecisionNode = ({ id, data, selected }) => {
                                 value={option}
                                 onChange={(e) => handleOptionChange(index, e.target.value)}
                                 style={{ flex: 1, padding: 4, background: 'var(--card)', border: '1px solid var(--border)', color: 'var(--foreground)', borderRadius: '4px' }}
+                                spellCheck="true"
+                                lang="es"
                             />
                             <button
                                 onClick={() => handleRemoveOption(index)}
