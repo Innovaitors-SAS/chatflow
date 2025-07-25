@@ -135,6 +135,19 @@ function generateYaml(nodes, edges) {
     yaml += `    - id: "End"\n`;
     yaml += `      text: "Fin del proceso"\n`;
 
+    const fileNames = new Set();
+    nodes.forEach(node => {
+        if (node.data?.action === 'Send File' && node.data?.file?.name) {
+            fileNames.add(node.data.file.name);
+        }
+    });
+
+    if (fileNames.size > 0) {
+        const sortedFileNames = Array.from(fileNames).sort();
+        const fileComments = sortedFileNames.map(fileName => `# - ${fileName}`).join('\n');
+        yaml += `\n${fileComments}`;
+    }
+
     return yaml;
 }
 
