@@ -123,7 +123,6 @@ function generateYaml(nodes, edges) {
                 } else if (nextNode.type === 'decision') {
                     decisionNodeIdForThisBlock = nextNode.id;
                     push(`      decision:`);
-                    push(`        id: "${getYamlNodeId(nextNode.id)}"`);
                     const condition = (node.data.condition || '').replace(/"/g, '\\"');
                     push(`        condition: "${condition}"`);
 
@@ -309,7 +308,7 @@ const generateNodesWithLayoutExits = (yamlData, files, layoutNodes) => {
 
         if (yamlNode.decision) {
             const decisionOptions = Object.keys(yamlNode.decision).filter(k => k !== 'condition' && k !== 'id').map(o => o.replace(/_/g, ' '));
-            const decisionNodeId = yamlNode.decision.id;
+            const decisionNodeId = yamlNode.decision.id || `decision-${flowNodeId}`;
             const decisionNode = { id: decisionNodeId, type: 'decision', data: { options: decisionOptions }, style: { width: 112, height: 112 } };
             flowNodes.push(decisionNode);
         }
@@ -404,7 +403,7 @@ const generateFlowFromYaml = (yamlData, files) => {
 
         if (yamlNode.decision) {
             const decisionOptions = Object.keys(yamlNode.decision).filter(k => k !== 'condition' && k !== 'id').map(o => o.replace(/_/g, ' '));
-            const decisionNodeId = yamlNode.decision.id;
+            const decisionNodeId = yamlNode.decision.id || `decision-${flowNodeId}`;
             const decisionNode = { id: decisionNodeId, type: 'decision', data: { options: decisionOptions }, style: { width: 112, height: 112 } };
             flowNodes.push(decisionNode);
             flowNode.decisionNodeId = decisionNodeId;
@@ -478,11 +477,10 @@ const applyLayout = (nodes, layoutNodes) => {
 };
 
 
-const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath }, ref) => {
+const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTitle, onFlowTitleChange, onFlowChange }, ref) => {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
-    const [flowTitle, setFlowTitle] = useState('Flow Builder');
     const [isEditingTitle, setIsEditingTitle] = useState(false);
     const selectedNodeIds = useRef(new Set());
     const [menu, setMenu] = useState(null);
@@ -514,6 +512,23 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath }, ref) 
     }, [testedPath, setNodes, setEdges]);
 
     useEffect(() => {
+        if (initialData?.fromLocalStorage) {
+            setNodes(initialData.nodes);
+            setEdges(initialData.edges);
+            if (reactFlowInstance && initialData.viewport) {
+                reactFlowInstance.setViewport(initialData.viewport);
+            }
+            if (initialData.flowTitle) {
+                onFlowTitleChange(initialData.flowTitle);
+            } else {
+                const startNode = initialData.nodes.find(n => n.type === 'start');
+                if (startNode?.data?.alarmCode) {
+                    onFlowTitleChange(`Flow for Alarm ${startNode.data.alarmCode}`);
+                }
+            }
+            return;
+        }
+
         if (initialData?.yaml) {
             let newNodes, newEdges;
 
@@ -544,10 +559,10 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath }, ref) 
             
             const startNode = finalNodes.find(n => n.type === 'start');
             if (startNode?.data?.alarmCode) {
-                setFlowTitle(`Flow for Alarm ${startNode.data.alarmCode}`);
+                onFlowTitleChange(`Flow for Alarm ${startNode.data.alarmCode}`);
             }
         }
-    }, [initialData, setNodes, setEdges, reactFlowInstance]);
+    }, [initialData, setNodes, setEdges, reactFlowInstance, onFlowTitleChange]);
 
     useEffect(() => {
         if (onYamlChange) {
@@ -555,7 +570,10 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath }, ref) 
             const currentSelectedNodeIds = new Set(nodes.filter(n => n.selected).map(n => n.id));
             onYamlChange(yamlString, lineMap, currentSelectedNodeIds);
         }
-    }, [nodes, edges, onYamlChange]);
+        if (onFlowChange) {
+            onFlowChange();
+        }
+    }, [nodes, edges, onYamlChange, onFlowChange]);
 
     useEffect(() => {
         const currentSelectedNodes = nodes.filter(n => n.selected);
@@ -785,7 +803,7 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath }, ref) 
                             {isEditingTitle ? (
                                 <input
                                     value={flowTitle}
-                                    onChange={(e) => setFlowTitle(e.target.value)}
+                                    onChange={(e) => onFlowTitleChange(e.target.value)}
                                     onBlur={() => setIsEditingTitle(false)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') setIsEditingTitle(false);

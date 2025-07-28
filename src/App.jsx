@@ -1,10 +1,84 @@
-import { useRef, useState, useCallback, useMemo } from 'react';
+import { useRef, useState, useCallback, useMemo, useEffect } from 'react';
 import yaml from 'js-yaml';
 import JSZip from 'jszip';
 import './App.css';
 import FlowDiagram from './components/FlowDiagram';
 import Sidebar from './components/Sidebar';
 import Chatbot from './components/chatbot/Chatbot';
+
+// Helper functions for persistence
+const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+};
+
+const readFileAsDataURL = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+    });
+};
+
+const dataURLtoBlob = (dataurl) => {
+    const arr = dataurl.split(',');
+    if (arr.length < 2) return new Blob();
+    const mimeMatch = arr[0].match(/:(.*?);/);
+    if (!mimeMatch) return new Blob();
+    const mime = mimeMatch[1];
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], { type: mime });
+};
+
+const serializeNodesForStorage = async (nodes) => {
+    const serializedNodes = [];
+    for (const node of nodes) {
+        let newNodeData = { ...node.data };
+        if (node.data?.action === 'Send File' && node.data?.file instanceof File) {
+            const file = node.data.file;
+            const fileContent = await readFileAsDataURL(file);
+            newNodeData.file = {
+                name: file.name,
+                type: file.type,
+                content: fileContent,
+            };
+        }
+        serializedNodes.push({ ...node, data: newNodeData });
+    }
+    return serializedNodes;
+};
+
+const deserializeNodesFromStorage = (serializedNodes) => {
+    if (!serializedNodes) return [];
+    return serializedNodes.map(node => {
+        let newNodeData = { ...node.data };
+        if (node.data?.action === 'Send File' && node.data?.file?.content) {
+            const fileData = node.data.file;
+            try {
+                const blob = dataURLtoBlob(fileData.content);
+                newNodeData.file = new File([blob], fileData.name, { type: fileData.type });
+            } catch (e) {
+                console.error("Error deserializing file", fileData.name, e);
+                newNodeData.file = { name: fileData.name };
+            }
+        }
+        return { ...node, data: newNodeData };
+    });
+};
+
 
 function App() {
   const [yamlString, setYamlString] = useState('');
@@ -17,6 +91,77 @@ function App() {
   const [testedPath, setTestedPath] = useState({ nodes: new Set(), edges: new Set() });
   const [sessionPath, setSessionPath] = useState({ nodes: new Set(), edges: new Set() });
   const flowDiagramRef = useRef(null);
+  const [flowTitle, setFlowTitle] = useState('Flow Builder');
+
+  const saveData = useCallback(() => {
+      if (!flowDiagramRef.current) return;
+
+      const { nodes, edges, viewport } = flowDiagramRef.current.getFlowData();
+
+      if (nodes.length <= 1 && edges.length === 0) {
+          localStorage.removeItem('chatflow-data');
+          return;
+      }
+
+      const performSave = async () => {
+          try {
+              const serializedNodes = await serializeNodesForStorage(nodes);
+              const flowData = {
+                  nodes: serializedNodes,
+                  edges,
+                  viewport,
+              };
+              const dataToStore = {
+                  flowData,
+                  sidebar: {
+                      isVisible: isSidebarVisible,
+                      width: sidebarWidth,
+                  },
+                  flowTitle,
+              };
+              localStorage.setItem('chatflow-data', JSON.stringify(dataToStore));
+          } catch (e) {
+              console.error("Failed to save flow to local storage", e);
+          }
+      };
+
+      performSave();
+  }, [isSidebarVisible, sidebarWidth, flowTitle]);
+
+  const debouncedSaveData = useMemo(() => debounce(saveData, 1000), [saveData]);
+
+  const handleFlowChange = useCallback(() => {
+      debouncedSaveData();
+  }, [debouncedSaveData]);
+
+  useEffect(() => {
+      const savedDataString = localStorage.getItem('chatflow-data');
+      if (savedDataString) {
+          try {
+              const savedData = JSON.parse(savedDataString);
+              if (savedData.flowData) {
+                  const deserializedNodes = deserializeNodesFromStorage(savedData.flowData.nodes);
+                  setInitialData({
+                      fromLocalStorage: true,
+                      nodes: deserializedNodes,
+                      edges: savedData.flowData.edges,
+                      viewport: savedData.flowData.viewport,
+                      flowTitle: savedData.flowTitle,
+                  });
+              }
+              if (savedData.sidebar) {
+                  setIsSidebarVisible(savedData.sidebar.isVisible);
+                  setSidebarWidth(savedData.sidebar.width);
+              }
+              if (savedData.flowTitle) {
+                  setFlowTitle(savedData.flowTitle);
+              }
+          } catch (e) {
+              console.error('Failed to load data from local storage', e);
+              localStorage.removeItem('chatflow-data');
+          }
+      }
+  }, []);
 
   const totalHighlightedPath = useMemo(() => ({
     nodes: new Set([...testedPath.nodes, ...sessionPath.nodes]),
@@ -170,6 +315,8 @@ function App() {
             });
             await Promise.all(filePromises);
         }
+        
+        handleCloseChatbot();
 
         setInitialData({
             yaml: yamlData,
@@ -201,7 +348,15 @@ function App() {
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <div style={{ flexGrow: 1, height: '100%' }}>
-        <FlowDiagram ref={flowDiagramRef} onYamlChange={onYamlChange} initialData={initialData} testedPath={totalHighlightedPath} />
+        <FlowDiagram
+            ref={flowDiagramRef}
+            onYamlChange={onYamlChange}
+            initialData={initialData}
+            testedPath={totalHighlightedPath}
+            flowTitle={flowTitle}
+            onFlowTitleChange={setFlowTitle}
+            onFlowChange={handleFlowChange}
+        />
       </div>
       <Sidebar
         yaml={yamlString}

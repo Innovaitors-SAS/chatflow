@@ -74,7 +74,7 @@ function Sidebar({ yaml, lineMap, selectedNodeIds, isVisible, width, onToggle, o
         const onMouseMove = (e) => {
             if (!isResizing.current) return;
             const newWidth = window.innerWidth - e.clientX;
-            if (newWidth >= 200 && newWidth <= 800) {
+            if (newWidth >= 200) {
                 onWidthChange(newWidth);
             }
         };
