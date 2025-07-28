@@ -285,7 +285,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
             <div style={{ padding: 10, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <div style={{ fontWeight: 'bold', marginBottom: 10, textAlign: 'center' }}>Condition</div>
                 <div style={{ whiteSpace: 'pre-wrap', marginBottom: 10, flexGrow: 1, color: 'var(--muted-foreground)', overflowY: 'auto', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {data.text || "No description."}
+                    {data.text || ""}
                 </div>
                 <div style={{
                     background: 'var(--secondary)',

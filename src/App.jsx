@@ -248,7 +248,7 @@ function App() {
         alarmCode = startNode.data.alarmCode;
     }
 
-    zip.file(`${alarmCode}.yml`, currentYaml);
+    zip.file(`alarma${alarmCode}.yml`, currentYaml);
 
     const extraMetadata = zip.folder('extra_metadata');
     for (const node of nodes) {
@@ -356,6 +356,7 @@ function App() {
             flowTitle={flowTitle}
             onFlowTitleChange={setFlowTitle}
             onFlowChange={handleFlowChange}
+            isSidebarVisible={isSidebarVisible}
         />
       </div>
       <Sidebar
