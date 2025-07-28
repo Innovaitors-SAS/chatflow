@@ -212,7 +212,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
             </button>
 
             {isMenuOpen && (
-                <div style={{
+                <div className="nodrag" style={{
                     position: 'absolute',
                     top: 16,
                     right: 5,
@@ -238,7 +238,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
                             value={text}
                             onChange={(e) => setText(e.target.value)}
                             placeholder="Enter condition description..."
-                            style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+                            style={{ ...inputStyle, minHeight: 120, resize: 'vertical' }}
                             spellCheck="true"
                             lang="es"
                         />
@@ -284,7 +284,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
             
             <div style={{ padding: 10, height: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <div style={{ fontWeight: 'bold', marginBottom: 10, textAlign: 'center' }}>Condition</div>
-                <div style={{ whiteSpace: 'pre-wrap', marginBottom: 10, flexGrow: 1, color: 'var(--muted-foreground)', overflowY: 'auto' }}>
+                <div style={{ whiteSpace: 'pre-wrap', marginBottom: 10, flexGrow: 1, color: 'var(--muted-foreground)', overflowY: 'auto', textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {data.text || "No description."}
                 </div>
                 <div style={{
