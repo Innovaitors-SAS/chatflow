@@ -70,14 +70,32 @@ const GoToExitNode = ({ id, data, selected }) => {
             <NodeResizer isVisible={selected} keepAspectRatio minWidth={64} minHeight={64} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }} />
             
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{ position: 'absolute', top: 10, right: 10, zIndex: 10, cursor: 'pointer', background: 'none', border: 'none', fontSize: '16px', color: 'var(--foreground)' }}>
+            <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                zIndex: 10,
+                cursor: 'pointer',
+                background: 'var(--card)',
+                border: '2px solid var(--border)',
+                borderRadius: '50%',
+                width: 24,
+                height: 24,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '16px',
+                lineHeight: 1,
+                color: 'var(--foreground)',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
+            }}>
                 ⋮
             </button>
 
             {isMenuOpen && (
                 <div style={{
                     position: 'absolute',
-                    top: 35,
+                    top: 28,
                     right: 10,
                     background: 'var(--card)',
                     border: '1px solid var(--border)',
