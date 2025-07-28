@@ -33,7 +33,7 @@ function App() {
     setSelectedNodeIds(newSelectedNodeIds);
   }, []);
 
-  const handleDownloadZip = async () => {
+  const handleDownloadChatflow = async () => {
     if (!flowDiagramRef.current) return;
 
     const { nodes, edges, viewport, yaml: currentYaml } = flowDiagramRef.current.getFlowData();
@@ -58,6 +58,43 @@ function App() {
     zip.file('graph_layout_metadata.json', JSON.stringify(layoutData, null, 2));
 
     // 3. Add files from nodes to extra_metadata/
+    const extraMetadata = zip.folder('extra_metadata');
+    for (const node of nodes) {
+        if (node.data?.action === 'Send File' && node.data?.file instanceof File) {
+            extraMetadata.file(node.data.file.name, node.data.file);
+        }
+    }
+    
+    // 4. Add icon.svg
+    const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path><path d="m7 12-2-2 2-2"></path><path d="m12 12 2-2-2-2"></path></svg>`;
+    zip.file('icon.svg', iconSvg);
+
+
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(zipBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    
+    const match = currentYaml.match(/id: "graph_alarm_(\w+)"/);
+    const alarmCode = match ? match[1] : 'flow';
+    a.download = `${alarmCode}_flow.chatflow`;
+    
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportZip = async () => {
+    if (!flowDiagramRef.current) return;
+
+    const { nodes, yaml: currentYaml } = flowDiagramRef.current.getFlowData();
+    if (!currentYaml) return;
+
+    const zip = new JSZip();
+
+    zip.file('flowchart.yml', currentYaml);
+
     const extraMetadata = zip.folder('extra_metadata');
     for (const node of nodes) {
         if (node.data?.action === 'Send File' && node.data?.file instanceof File) {
@@ -92,7 +129,7 @@ function App() {
         const layoutFile = content.file('graph_layout_metadata.json');
         
         if (!yamlFile) {
-            alert('ZIP archive must contain a "flowchart.yml" file.');
+            alert('ChatFlow file must contain a "flowchart.yml" file.');
             return;
         }
 
@@ -133,8 +170,8 @@ function App() {
         });
 
     } catch (err) {
-        console.error("Error processing ZIP file:", err);
-        alert("Failed to process ZIP file. It may be corrupt or not a valid ZIP archive.");
+        console.error("Error processing ChatFlow file:", err);
+        alert("Failed to process ChatFlow file. It may be corrupt or not a valid ChatFlow archive.");
     } finally {
       e.target.value = ''; // Reset file input
     }
@@ -168,9 +205,9 @@ function App() {
         onWidthChange={setSidebarWidth}
       />
       <input
-          id="zip-upload"
+          id="chatflow-upload"
           type="file"
-          accept=".zip"
+          accept=".chatflow"
           onChange={handleFileUpload}
           style={{ display: 'none' }}
       />
@@ -180,7 +217,7 @@ function App() {
         style={{
           position: 'fixed',
           bottom: '24px',
-          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12}px`,
+          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12 + 56 + 12}px`,
           width: '56px',
           height: '56px',
           borderRadius: '50%',
@@ -200,12 +237,12 @@ function App() {
       </button>
 
        <button
-        title="Upload Flow (ZIP)"
-        onClick={() => document.getElementById('zip-upload').click()}
+        title="Upload Flow (.chatflow)"
+        onClick={() => document.getElementById('chatflow-upload').click()}
         style={{
           position: 'fixed',
           bottom: '24px',
-          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12}px` : `${24 + 56 + 12}px`,
+          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12}px`,
           width: '56px',
           height: '56px',
           borderRadius: '50%',
@@ -225,8 +262,33 @@ function App() {
       </button>
 
       <button
-        title="Download Flow (ZIP)"
-        onClick={handleDownloadZip}
+        title="Export ZIP"
+        onClick={handleExportZip}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12}px` : `${24 + 56 + 12}px`,
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          background: 'var(--primary)',
+          color: 'var(--primary-foreground)',
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1001,
+          transition: 'right 0.3s ease-in-out'
+        }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+      </button>
+
+      <button
+        title="Download Flow (.chatflow)"
+        onClick={handleDownloadChatflow}
         style={{
           position: 'fixed',
           bottom: '24px',
