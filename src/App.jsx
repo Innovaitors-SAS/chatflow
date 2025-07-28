@@ -75,20 +75,12 @@ function App() {
     const a = document.createElement('a');
     a.href = url;
     
+    const startNode = nodes.find(n => n.type === 'start');
     let alarmCode = 'flow';
-    try {
-        const yamlData = yaml.load(currentYaml);
-        if (yamlData?.Alarms) {
-            const key = Object.keys(yamlData.Alarms)[0];
-            if (key) {
-                alarmCode = key;
-            }
-        } else if (yamlData?.graph?.description) {
-            alarmCode = yamlData.graph.description;
-        }
-    } catch (e) {
-        console.error("Error parsing YAML for filename", e);
+    if (startNode?.data?.alarmCode) {
+        alarmCode = startNode.data.alarmCode;
     }
+    
     a.download = `${alarmCode}_flow.chatflow`;
     
     document.body.appendChild(a);
@@ -105,7 +97,13 @@ function App() {
 
     const zip = new JSZip();
 
-    zip.file('flowchart.yml', currentYaml);
+    const startNode = nodes.find(n => n.type === 'start');
+    let alarmCode = 'flow';
+    if (startNode?.data?.alarmCode) {
+        alarmCode = startNode.data.alarmCode;
+    }
+
+    zip.file(`${alarmCode}.yml`, currentYaml);
 
     const extraMetadata = zip.folder('extra_metadata');
     for (const node of nodes) {
@@ -119,20 +117,6 @@ function App() {
     const a = document.createElement('a');
     a.href = url;
     
-    let alarmCode = 'flow';
-    try {
-        const yamlData = yaml.load(currentYaml);
-        if (yamlData?.Alarms) {
-            const key = Object.keys(yamlData.Alarms)[0];
-            if (key) {
-                alarmCode = key;
-            }
-        } else if (yamlData?.graph?.description) {
-            alarmCode = yamlData.graph.description;
-        }
-    } catch (e) {
-        console.error("Error parsing YAML for filename", e);
-    }
     a.download = `${alarmCode}_flow.zip`;
     
     document.body.appendChild(a);

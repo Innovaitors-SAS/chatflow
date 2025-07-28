@@ -60,29 +60,25 @@ function generateYaml(nodes, edges) {
         }
     });
 
-    push(`Alarms:`);
-    push(`    "${alarmCode}":`);
-    push(`        name: Alarma ${alarmCode}`);
-    push(`        file_name: alarma${alarmCode}.yml`);
-    push(`        alarm_type: ${alarmType}`);
-    if (fileNames.size > 0) {
-        push(`        extra_metadata:`);
-        const sortedFileNames = Array.from(fileNames).sort();
-        sortedFileNames.forEach(fileName => push(`            - ${fileName}`));
-    }
-    push(``);
-
     const nodesMap = new Map(nodes.map(n => [n.id, n]));
     const edgesBySource = edges.reduce((acc, edge) => {
         if (!acc[edge.source]) acc[edge.source] = [];
         acc[edge.source].push(edge);
         return acc;
     }, {});
+
+    const startNodeEdges = edgesBySource[startNode?.id] || [];
+    const firstNodeAfterStartId = startNodeEdges.length > 0 ? startNodeEdges[0].target : null;
+    const idMapping = new Map();
+    if (firstNodeAfterStartId) {
+        idMapping.set(firstNodeAfterStartId, `${alarmCode}_start`);
+    }
+    const getYamlNodeId = (nodeId) => idMapping.get(nodeId) || nodeId;
     
     const graphStartLine = yamlLines.length + 1;
     push(`graph:`);
     push(`  id: "graph_alarm_${alarmCode}"`);
-    push(`  description: "${alarmCode}"`);
+    push(`  description: "Proceso alarma ${alarmCode}."`);
     push(``);
     if (startNode) lineMap.set(startNode.id, { start: graphStartLine, end: yamlLines.length });
 
@@ -102,7 +98,7 @@ function generateYaml(nodes, edges) {
         const startLine = yamlLines.length + 1;
         let decisionNodeIdForThisBlock = null;
 
-        push(`    - id: "${node.id}"`);
+        push(`    - id: "${getYamlNodeId(node.id)}"`);
         const text = (node.data.text || '').replace(/"/g, '\\"').replace(/\n/g, '\\n');
         if (text) {
             push(`      text: "${text}"`);
@@ -127,7 +123,7 @@ function generateYaml(nodes, edges) {
                 } else if (nextNode.type === 'decision') {
                     decisionNodeIdForThisBlock = nextNode.id;
                     push(`      decision:`);
-                    push(`        id: "${nextNode.id}"`);
+                    push(`        id: "${getYamlNodeId(nextNode.id)}"`);
                     const condition = (node.data.condition || '').replace(/"/g, '\\"');
                     push(`        condition: "${condition}"`);
 
@@ -135,7 +131,7 @@ function generateYaml(nodes, edges) {
                     for (const edge of decisionEdges) {
                         const targetNode = nodesMap.get(edge.target);
                         if (targetNode) {
-                            const targetId = targetNode.type === 'exit' ? 'End' : edge.target;
+                            const targetId = targetNode.type === 'exit' ? 'End' : getYamlNodeId(edge.target);
                             if (targetId) {
                                 const originalLabel = (edge.data?.label || 'option');
                                 // check if original label is a number before any transformation
@@ -154,7 +150,7 @@ function generateYaml(nodes, edges) {
                 } else if (outgoingEdges.length === 1) {
                     const targetId = outgoingEdges[0].target;
                     if (targetId) {
-                        push(`      next: "${targetId}"`);
+                        push(`      next: "${getYamlNodeId(targetId)}"`);
                     }
                 }
             }
@@ -274,7 +270,7 @@ const generateNodesWithLayoutExits = (yamlData, files, layoutNodes) => {
         }
     }
     if (!alarmCode) alarmCode = graph.description;
-    if (!alarmType) alarmType = 'warning';
+    if (!alarmType) alarmType = graph.alarm_type || 'warning';
 
     const startNode = {
         id: 'start-node-1',
@@ -368,7 +364,7 @@ const generateFlowFromYaml = (yamlData, files) => {
         }
     }
     if (!alarmCode) alarmCode = graph.description;
-    if (!alarmType) alarmType = 'warning';
+    if (!alarmType) alarmType = graph.alarm_type || 'warning';
 
     const startNode = {
         id: 'start-node-1',
