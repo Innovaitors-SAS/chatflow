@@ -5,7 +5,8 @@ import { NodeResizer } from '@reactflow/node-resizer';
 const StartNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [text, setText] = useState(data.text || '');
+    const [alarmCode, setAlarmCode] = useState(data.alarmCode || '');
+    const [alarmType, setAlarmType] = useState(data.alarmType || 'warning');
     const nodeRef = useRef(null);
 
     useEffect(() => {
@@ -28,15 +29,24 @@ const StartNode = ({ id, data, selected }) => {
 
     useEffect(() => {
         if (isMenuOpen) {
-            setText(data.text || '');
+            setAlarmCode(data.alarmCode || '');
+            setAlarmType(data.alarmType || 'warning');
         }
-    }, [isMenuOpen, data.text]);
+    }, [isMenuOpen, data.alarmCode, data.alarmType]);
 
     const handleSave = () => {
+        const newText = `Alarm ${alarmCode}`;
         setNodes(nodes => nodes.map(node =>
-            node.id === id ? { ...node, data: { ...node.data, text } } : node
+            node.id === id ? { ...node, data: { ...node.data, text: newText, alarmCode, alarmType } } : node
         ));
         setIsMenuOpen(false);
+    };
+
+    const handleAlarmCodeChange = (e) => {
+        const value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 4) {
+            setAlarmCode(value);
+        }
     };
 
     const nodeStyle = {
@@ -63,6 +73,16 @@ const StartNode = ({ id, data, selected }) => {
         borderRadius: '4px',
         cursor: 'pointer',
         width: '100%'
+    };
+
+    const inputStyle = {
+        padding: 4,
+        background: 'var(--card)',
+        border: '1px solid var(--border)',
+        borderRadius: '4px',
+        color: 'var(--foreground)',
+        width: '100%',
+        boxSizing: 'border-box'
     };
 
     return (
@@ -92,15 +112,24 @@ const StartNode = ({ id, data, selected }) => {
                     pointerEvents: 'all'
                 }}>
                     <div style={{ fontWeight: 'bold' }}>Edit Start</div>
-                    <input
-                        type="text"
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        placeholder="Start text"
-                        style={{ padding: 4, background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '4px', color: 'var(--foreground)', width: '100%', boxSizing: 'border-box' }}
-                        spellCheck="true"
-                        lang="es"
-                    />
+                    <div>
+                        <div style={{ marginBottom: 5, fontSize: 12, color: 'var(--muted-foreground)' }}>Alarm Code:</div>
+                        <input
+                            type="text"
+                            value={alarmCode}
+                            onChange={handleAlarmCodeChange}
+                            placeholder="4-digit code"
+                            style={inputStyle}
+                            maxLength={4}
+                        />
+                    </div>
+                    <div>
+                        <div style={{ marginBottom: 5, fontSize: 12, color: 'var(--muted-foreground)' }}>Alarm Type:</div>
+                        <select value={alarmType} onChange={(e) => setAlarmType(e.target.value)} style={inputStyle}>
+                            <option value="warning">Warning</option>
+                            <option value="critical">Critical</option>
+                        </select>
+                    </div>
                     <button
                         onClick={handleSave}
                         style={buttonStyle}

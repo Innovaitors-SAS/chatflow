@@ -75,8 +75,20 @@ function App() {
     const a = document.createElement('a');
     a.href = url;
     
-    const match = currentYaml.match(/id: "graph_alarm_(\w+)"/);
-    const alarmCode = match ? match[1] : 'flow';
+    let alarmCode = 'flow';
+    try {
+        const yamlData = yaml.load(currentYaml);
+        if (yamlData?.Alarms) {
+            const key = Object.keys(yamlData.Alarms)[0];
+            if (key) {
+                alarmCode = key;
+            }
+        } else if (yamlData?.graph?.description) {
+            alarmCode = yamlData.graph.description;
+        }
+    } catch (e) {
+        console.error("Error parsing YAML for filename", e);
+    }
     a.download = `${alarmCode}_flow.chatflow`;
     
     document.body.appendChild(a);
@@ -107,8 +119,20 @@ function App() {
     const a = document.createElement('a');
     a.href = url;
     
-    const match = currentYaml.match(/id: "graph_alarm_(\w+)"/);
-    const alarmCode = match ? match[1] : 'flow';
+    let alarmCode = 'flow';
+    try {
+        const yamlData = yaml.load(currentYaml);
+        if (yamlData?.Alarms) {
+            const key = Object.keys(yamlData.Alarms)[0];
+            if (key) {
+                alarmCode = key;
+            }
+        } else if (yamlData?.graph?.description) {
+            alarmCode = yamlData.graph.description;
+        }
+    } catch (e) {
+        console.error("Error parsing YAML for filename", e);
+    }
     a.download = `${alarmCode}_flow.zip`;
     
     document.body.appendChild(a);
@@ -136,8 +160,8 @@ function App() {
         const yamlContent = await yamlFile.async('string');
         const yamlData = yaml.load(yamlContent);
 
-        if (!yamlData || !yamlData.graph) {
-            alert('Invalid YAML structure. Expected a "graph" property.');
+        if (!yamlData || !(yamlData.graph || yamlData.Alarms)) {
+            alert('Invalid YAML structure. Expected a "graph" or "Alarms" property.');
             return;
         }
         

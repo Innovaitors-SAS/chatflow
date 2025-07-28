@@ -36,7 +36,7 @@ const initialNodes = [
         id: 'start-node-1',
         type: 'start',
         position: { x: 450, y: 50 },
-        data: { text: 'Workflow Start' },
+        data: { text: 'Workflow Start', alarmCode: '0000', alarmType: 'warning' },
         style: { width: 80, height: 80 },
         deletable: false,
     }
@@ -45,28 +45,46 @@ const initialNodes = [
 function generateYaml(nodes, edges) {
     if (!nodes || nodes.length === 0) return { yamlString: '', lineMap: new Map() };
 
+    const yamlLines = [];
+    const push = (str) => yamlLines.push(str);
+    const lineMap = new Map();
+
+    const startNode = nodes.find(n => n.type === 'start');
+    const alarmCode = startNode?.data?.alarmCode || 'XXXX';
+    const alarmType = startNode?.data?.alarmType || 'warning';
+
+    const fileNames = new Set();
+    nodes.forEach(node => {
+        if (node.data?.action === 'Send File' && node.data?.file?.name) {
+            fileNames.add(node.data.file.name);
+        }
+    });
+
+    push(`Alarms:`);
+    push(`    "${alarmCode}":`);
+    push(`        name: Alarma ${alarmCode}`);
+    push(`        file_name: alarma${alarmCode}.yml`);
+    push(`        alarm_type: ${alarmType}`);
+    if (fileNames.size > 0) {
+        push(`        extra_metadata:`);
+        const sortedFileNames = Array.from(fileNames).sort();
+        sortedFileNames.forEach(fileName => push(`            - ${fileName}`));
+    }
+    push(``);
+
     const nodesMap = new Map(nodes.map(n => [n.id, n]));
     const edgesBySource = edges.reduce((acc, edge) => {
         if (!acc[edge.source]) acc[edge.source] = [];
         acc[edge.source].push(edge);
         return acc;
     }, {});
-
-    const startNode = nodes.find(n => n.type === 'start');
-    const alarmCode = startNode?.data?.text?.match(/\b(\d{4})\b/)?.[1] || 'XXXX';
-
-    let yamlLines = [];
-    const lineMap = new Map();
-
-    const push = (str) => yamlLines.push(str);
-
-    const startNodeLineRange = { start: 1, end: 0 };
+    
+    const graphStartLine = yamlLines.length + 1;
     push(`graph:`);
     push(`  id: "graph_alarm_${alarmCode}"`);
     push(`  description: "${alarmCode}"`);
     push(``);
-    startNodeLineRange.end = yamlLines.length;
-    if (startNode) lineMap.set(startNode.id, startNodeLineRange);
+    if (startNode) lineMap.set(startNode.id, { start: graphStartLine, end: yamlLines.length });
 
     push(`  nodes:`);
 
@@ -161,18 +179,18 @@ function generateYaml(nodes, edges) {
         lineMap.set(exitNode.id, { start: endNodeStartLine, end: endNodeEndLine });
     }
 
-    const fileNames = new Set();
-    nodes.forEach(node => {
-        if (node.data?.action === 'Send File' && node.data?.file?.name) {
-            fileNames.add(node.data.file.name);
-        }
-    });
-
+    push(``);
+    push(`# ---`);
+    push(`# Metadata for Alarms file (for reference):`);
+    push(`#`);
+    push(`#    "${alarmCode}":`);
+    push(`#        name: Alarma ${alarmCode}`);
+    push(`#        file_name: alarma${alarmCode}.yml`);
+    push(`#        alarm_type: ${alarmType}`);
     if (fileNames.size > 0) {
-        push(``);
+        push(`#        extra_metadata:`);
         const sortedFileNames = Array.from(fileNames).sort();
-        const fileComments = sortedFileNames.map(fileName => `# - ${fileName}`);
-        fileComments.forEach(line => push(line));
+        sortedFileNames.forEach(fileName => push(`#            - ${fileName}`));
     }
 
     return { yamlString: yamlLines.join('\n'), lineMap };
@@ -231,10 +249,10 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
 };
 
 const generateNodesWithLayoutExits = (yamlData, files, layoutNodes) => {
-    if (!yamlData?.graph?.nodes) {
+    const { graph, Alarms } = yamlData || {};
+    if (!graph?.nodes) {
         return { nodes: initialNodes };
     }
-    const { graph } = yamlData;
 
     const seenNodeIds = new Set();
     const yamlNodes = graph.nodes.filter(node => {
@@ -247,10 +265,25 @@ const generateNodesWithLayoutExits = (yamlData, files, layoutNodes) => {
 
     let flowNodes = [];
 
+    let alarmCode, alarmType;
+    if (Alarms) {
+        const alarmKey = Object.keys(Alarms)[0];
+        if (alarmKey) {
+            alarmCode = alarmKey;
+            alarmType = Alarms[alarmKey]?.alarm_type;
+        }
+    }
+    if (!alarmCode) alarmCode = graph.description;
+    if (!alarmType) alarmType = 'warning';
+
     const startNode = {
         id: 'start-node-1',
         type: 'start',
-        data: { text: `Alarm ${graph.description}` || 'Workflow Start' },
+        data: { 
+            text: `Alarm ${alarmCode}` || 'Workflow Start',
+            alarmCode,
+            alarmType
+        },
         style: { width: 80, height: 80 },
         deletable: false,
     };
@@ -305,10 +338,10 @@ const generateNodesWithLayoutExits = (yamlData, files, layoutNodes) => {
 };
 
 const generateFlowFromYaml = (yamlData, files) => {
-    if (!yamlData?.graph?.nodes) {
+    const { graph, Alarms } = yamlData || {};
+    if (!graph?.nodes) {
         return { nodes: initialNodes, edges: [] };
     }
-    const { graph } = yamlData;
 
     const seenNodeIds = new Set();
     const yamlNodes = graph.nodes.filter(node => {
@@ -326,10 +359,25 @@ const generateFlowFromYaml = (yamlData, files) => {
     const flowNodeMap = new Map();
     const exitNodeMap = new Map();
 
+    let alarmCode, alarmType;
+    if (Alarms) {
+        const alarmKey = Object.keys(Alarms)[0];
+        if (alarmKey) {
+            alarmCode = alarmKey;
+            alarmType = Alarms[alarmKey]?.alarm_type;
+        }
+    }
+    if (!alarmCode) alarmCode = graph.description;
+    if (!alarmType) alarmType = 'warning';
+
     const startNode = {
         id: 'start-node-1',
         type: 'start',
-        data: { text: `Alarm ${graph.description}` || 'Workflow Start' },
+        data: { 
+            text: `Alarm ${alarmCode}` || 'Workflow Start',
+            alarmCode,
+            alarmType
+        },
         style: { width: 80, height: 80 },
         deletable: false,
     };
@@ -498,8 +546,9 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath }, ref) 
                 reactFlowInstance.setViewport(initialData.layout.viewport);
             }
             
-            if (initialData.yaml.graph?.description) {
-                setFlowTitle(`Flow for Alarm ${initialData.yaml.graph.description}`);
+            const startNode = finalNodes.find(n => n.type === 'start');
+            if (startNode?.data?.alarmCode) {
+                setFlowTitle(`Flow for Alarm ${startNode.data.alarmCode}`);
             }
         }
     }, [initialData, setNodes, setEdges, reactFlowInstance]);
