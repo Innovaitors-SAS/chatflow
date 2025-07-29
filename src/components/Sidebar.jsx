@@ -1,5 +1,11 @@
 import { useEffect, useRef } from 'react';
 
+const boldYamlKeys = (line) => {
+    const escapedLine = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const keyRegex = /^(\s*(?:-\s+)?)([a-zA-Z_][\w-]*)(:.*)/;
+    return escapedLine.replace(keyRegex, '$1<strong>$2</strong>$3');
+};
+
 const YamlViewer = ({ yamlString, lineMap, selectedNodeIds }) => {
     const lineRefs = useRef({});
 
@@ -51,7 +57,7 @@ const YamlViewer = ({ yamlString, lineMap, selectedNodeIds }) => {
                             className={`yaml-line ${highlightedLines.has(lineNumber) ? 'highlighted' : ''}`}
                         >
                             <span className="line-number">{lineNumber}</span>
-                            <span className="line-content">{line}</span>
+                            <span className="line-content" dangerouslySetInnerHTML={{ __html: boldYamlKeys(line) }} />
                         </div>
                     );
                 })}
@@ -158,3 +164,4 @@ function Sidebar({ yaml, lineMap, selectedNodeIds, isVisible, width, onToggle, o
 }
 
 export default Sidebar;
+

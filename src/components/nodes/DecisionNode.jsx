@@ -119,7 +119,7 @@ const DecisionNode = ({ id, data, selected }) => {
             </div>
 
             {isMenuOpen && (
-                <div style={{
+                <div className="nodrag" style={{
                     position: 'absolute',
                     top: 16,
                     right: 5,

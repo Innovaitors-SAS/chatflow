@@ -146,7 +146,6 @@ function generateYaml(nodes, edges) {
                 } else if (nextNode.type === 'decision') {
                     decisionNodeIdForThisBlock = nextNode.id;
                     push(`      decision:`);
-                    push(`        id: "${nextNode.id}"`);
                     const condition = (node.data.condition || '').replace(/"/g, '\\"');
                     push(`        condition: "${condition}"`);
 
@@ -294,19 +293,28 @@ const generateFlowFromLayoutAndYaml = (layoutData, yamlData, files) => {
             
             if (yamlNode.decision) {
                 flowNode.data.condition = yamlNode.decision.condition || '';
-                
-                const decisionNodeId = yamlNode.decision.id;
-                const decisionNode = flowNodeMap.get(decisionNodeId);
 
-                if (decisionNode && decisionNode.type === 'decision') {
-                    const decisionOptions = Object.keys(yamlNode.decision)
-                        .filter(k => k !== 'condition' && k !== 'id')
-                        .map(o => {
-                            const spaced = o.replace(/_/g, ' ');
-                            const isNumeric = /^-?\d+(\.\d+)?$/.test(spaced);
-                            return isNumeric ? spaced : capitalizeFirstLetter(spaced);
-                        });
-                    decisionNode.data.options = decisionOptions;
+                // Find the decision node this condition node is connected to.
+                const outgoingEdgeToDecision = (layoutData.edges || []).find(edge => {
+                    if (edge.source !== flowNode.id) return false;
+                    const targetNode = flowNodeMap.get(edge.target);
+                    return targetNode && targetNode.type === 'decision';
+                });
+
+                if (outgoingEdgeToDecision) {
+                    const decisionNodeId = outgoingEdgeToDecision.target;
+                    const decisionNode = flowNodeMap.get(decisionNodeId);
+
+                    if (decisionNode) {
+                        const decisionOptions = Object.keys(yamlNode.decision)
+                            .filter(k => k !== 'condition' && k !== 'id')
+                            .map(o => {
+                                const spaced = o.replace(/_/g, ' ');
+                                const isNumeric = /^-?\d+(\.\d+)?$/.test(spaced);
+                                return isNumeric ? spaced : capitalizeFirstLetter(spaced);
+                            });
+                        decisionNode.data.options = decisionOptions;
+                    }
                 }
             }
         }
@@ -526,7 +534,6 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
-    const [isEditingTitle, setIsEditingTitle] = useState(false);
     const selectedNodeIds = useRef(new Set());
     const [menu, setMenu] = useState(null);
 
@@ -550,6 +557,14 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
     }, [nodes, edges, setNodes, setEdges]);
 
     useEffect(() => {
+        const startNode = nodes.find(n => n.type === 'start');
+        const newTitle = startNode?.data?.alarmCode ? `Flow for Alarm ${startNode.data.alarmCode}` : 'Flow Builder';
+        if (flowTitle !== newTitle) {
+            onFlowTitleChange(newTitle);
+        }
+    }, [nodes, flowTitle, onFlowTitleChange]);
+
+    useEffect(() => {
         if (testedPath) {
             setNodes((nds) => nds.map((n) => ({ ...n, data: { ...n.data, isTested: testedPath.nodes.has(n.id) } })));
             setEdges((eds) => eds.map((e) => ({ ...e, data: { ...e.data, isTested: testedPath.edges.has(e.id) } })));
@@ -562,14 +577,6 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
             setEdges(initialData.edges);
             if (reactFlowInstance && initialData.viewport) {
                 reactFlowInstance.setViewport(initialData.viewport);
-            }
-            if (initialData.flowTitle) {
-                onFlowTitleChange(initialData.flowTitle);
-            } else {
-                const startNode = initialData.nodes.find(n => n.type === 'start');
-                if (startNode?.data?.alarmCode) {
-                    onFlowTitleChange(`Flow for Alarm ${startNode.data.alarmCode}`);
-                }
             }
             return;
         }
@@ -594,13 +601,8 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
             if (reactFlowInstance && initialData.layout?.viewport) {
                 reactFlowInstance.setViewport(initialData.layout.viewport);
             }
-            
-            const startNode = finalNodes.find(n => n.type === 'start');
-            if (startNode?.data?.alarmCode) {
-                onFlowTitleChange(`Flow for Alarm ${startNode.data.alarmCode}`);
-            }
         }
-    }, [initialData, setNodes, setEdges, reactFlowInstance, onFlowTitleChange]);
+    }, [initialData, setNodes, setEdges, reactFlowInstance]);
 
     useEffect(() => {
         if (onYamlChange && isSidebarVisible) {
@@ -791,7 +793,7 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
             };
 
             if (type === 'condition') {
-                newNode.style = { width: 160, height: 96 };
+                newNode.style = { width: 200, height: 140 };
             } else if (type === 'decision') {
                 newNode.style = { width: 112, height: 112 };
             } else if (type === 'exit') {
@@ -838,35 +840,9 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
                             alignItems: 'center',
                             gap: '10px'
                         }}>
-                            {isEditingTitle ? (
-                                <input
-                                    value={flowTitle}
-                                    onChange={(e) => onFlowTitleChange(e.target.value)}
-                                    onBlur={() => setIsEditingTitle(false)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') setIsEditingTitle(false);
-                                    }}
-                                    autoFocus
-                                    style={{
-                                        fontSize: '1.17em',
-                                        fontWeight: 'bold',
-                                        border: 'none',
-                                        background: 'transparent',
-                                        color: 'var(--foreground)',
-                                        borderBottom: '1px solid var(--foreground)',
-                                        outline: 'none',
-                                        padding: '0 5px'
-                                    }}
-                                />
-                            ) : (
-                                <h3
-                                    onDoubleClick={() => setIsEditingTitle(true)}
-                                    title="Double-click to edit title"
-                                    style={{ margin: 0, cursor: 'pointer', padding: '0 5px' }}
-                                >
-                                    {flowTitle}
-                                </h3>
-                            )}
+                            <h3 style={{ margin: 0, padding: '0 5px' }}>
+                                {flowTitle}
+                            </h3>
                             <button
                                 onClick={onLayout}
                                 title="Auto-layout"
@@ -903,3 +879,4 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
 });
 
 export default FlowDiagram;
+

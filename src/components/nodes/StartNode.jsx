@@ -112,7 +112,7 @@ const StartNode = ({ id, data, selected }) => {
             </button>
 
             {isMenuOpen && (
-                <div style={{
+                <div className="nodrag" style={{
                     position: 'absolute',
                     top: 28,
                     right: 10,

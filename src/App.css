@@ -88,6 +88,11 @@
     color: var(--foreground);
 }
 
+.yaml-viewer strong {
+    color: var(--ring);
+    font-weight: 600;
+}
+
 .yaml-line {
     display: flex;
     transition: background-color 0.2s ease-in-out;
@@ -268,3 +273,4 @@
     background: var(--secondary);
     color: var(--secondary-foreground);
 }
+

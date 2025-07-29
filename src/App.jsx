@@ -117,7 +117,6 @@ function App() {
                       isVisible: isSidebarVisible,
                       width: sidebarWidth,
                   },
-                  flowTitle,
               };
               localStorage.setItem('chatflow-data', JSON.stringify(dataToStore));
           } catch (e) {
@@ -126,7 +125,7 @@ function App() {
       };
 
       performSave();
-  }, [isSidebarVisible, sidebarWidth, flowTitle]);
+  }, [isSidebarVisible, sidebarWidth]);
 
   const debouncedSaveData = useMemo(() => debounce(saveData, 1000), [saveData]);
 
@@ -146,15 +145,11 @@ function App() {
                       nodes: deserializedNodes,
                       edges: savedData.flowData.edges,
                       viewport: savedData.flowData.viewport,
-                      flowTitle: savedData.flowTitle,
                   });
               }
               if (savedData.sidebar) {
                   setIsSidebarVisible(savedData.sidebar.isVisible);
                   setSidebarWidth(savedData.sidebar.width);
-              }
-              if (savedData.flowTitle) {
-                  setFlowTitle(savedData.flowTitle);
               }
           } catch (e) {
               console.error('Failed to load data from local storage', e);
