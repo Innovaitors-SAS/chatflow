@@ -146,6 +146,7 @@ function generateYaml(nodes, edges) {
                 } else if (nextNode.type === 'decision') {
                     decisionNodeIdForThisBlock = nextNode.id;
                     push(`      decision:`);
+                    push(`        id: "${nextNode.id}"`);
                     const condition = (node.data.condition || '').replace(/"/g, '\\"');
                     push(`        condition: "${condition}"`);
 
@@ -214,6 +215,106 @@ function generateYaml(nodes, edges) {
     return { yamlString: yamlLines.join('\n'), lineMap };
 }
 
+const generateFlowFromLayoutAndYaml = (layoutData, yamlData, files) => {
+    const { graph, Alarms } = yamlData || {};
+    if (!graph?.nodes || !layoutData?.nodes) {
+        return { nodes: initialNodes, edges: [] };
+    }
+
+    const filesData = files || new Map();
+
+    // 1. Create nodes from layout data.
+    let flowNodes = layoutData.nodes.map(ln => {
+        const data = { ...(ln.data || {}) };
+        if (data.file && typeof data.file === 'object' && data.file.name && filesData.has(data.file.name)) {
+            data.file = filesData.get(data.file.name);
+        }
+        
+        return {
+            id: ln.id,
+            type: ln.type,
+            position: ln.position,
+            width: ln.width,
+            height: ln.height,
+            style: { width: ln.width, height: ln.height },
+            data: data,
+            deletable: ln.type !== 'start'
+        };
+    });
+    
+    const flowNodeMap = new Map(flowNodes.map(n => [n.id, n]));
+
+    // 2. Parse YAML to get logical structure and update node data.
+    const seenNodeIds = new Set();
+    const yamlGraphNodes = graph.nodes.filter(node => {
+        if (!node?.id || seenNodeIds.has(node.id) || node.id === 'End') return false;
+        seenNodeIds.add(node.id);
+        return true;
+    });
+    
+    let alarmCode, alarmType;
+    if (Alarms) {
+        const alarmKey = Object.keys(Alarms)[0];
+        if (alarmKey) {
+            alarmCode = alarmKey;
+            alarmType = Alarms[alarmKey]?.alarm_type;
+        }
+    }
+    if (!alarmCode) alarmCode = graph.description?.replace('Proceso alarma ', '').replace('.', '') || graph.id?.replace('graph_alarm_', '') || 'XXXX';
+    if (!alarmType) alarmType = 'warning';
+
+    const startNode = flowNodes.find(n => n.type === 'start');
+    if (startNode) {
+        startNode.data.alarmCode = alarmCode;
+        startNode.data.alarmType = alarmType;
+        startNode.data.text = `Alarm ${alarmCode}`;
+    }
+
+    // Update nodes based on YAML data
+    for (const yamlNode of yamlGraphNodes) {
+        const flowNode = flowNodeMap.get(yamlNode.id);
+        if (flowNode && flowNode.type === 'condition') {
+            flowNode.data.text = yamlNode.text || '';
+            flowNode.data.action = 'none';
+            flowNode.data.file = null;
+            
+            if (yamlNode.action) {
+                if (yamlNode.action === 'create_ticket_in_db') {
+                    flowNode.data.action = 'Create Ticket';
+                } else if (yamlNode.action.startsWith('Enviar archivo ')) {
+                    flowNode.data.action = 'Send File';
+                    const fileName = yamlNode.action.substring('Enviar archivo '.length);
+                    if (filesData.has(fileName)) {
+                        flowNode.data.file = filesData.get(fileName);
+                    } else {
+                        flowNode.data.file = { name: fileName };
+                    }
+                }
+            }
+            
+            if (yamlNode.decision) {
+                flowNode.data.condition = yamlNode.decision.condition || '';
+                
+                const decisionNodeId = yamlNode.decision.id;
+                const decisionNode = flowNodeMap.get(decisionNodeId);
+
+                if (decisionNode && decisionNode.type === 'decision') {
+                    const decisionOptions = Object.keys(yamlNode.decision)
+                        .filter(k => k !== 'condition' && k !== 'id')
+                        .map(o => {
+                            const spaced = o.replace(/_/g, ' ');
+                            const isNumeric = /^-?\d+(\.\d+)?$/.test(spaced);
+                            return isNumeric ? spaced : capitalizeFirstLetter(spaced);
+                        });
+                    decisionNode.data.options = decisionOptions;
+                }
+            }
+        }
+    }
+
+    return { nodes: flowNodes, edges: layoutData.edges || [] };
+};
+
 const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     const dagreGraph = new dagre.graphlib.Graph();
     dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -264,101 +365,6 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     }
     
     return { nodes: layoutedNodes, edges };
-};
-
-const generateNodesWithLayoutExits = (yamlData, files, layoutNodes) => {
-    const { graph, Alarms } = yamlData || {};
-    if (!graph?.nodes) {
-        return { nodes: initialNodes };
-    }
-
-    const seenNodeIds = new Set();
-    const yamlNodes = graph.nodes.filter(node => {
-        if (!node?.id || seenNodeIds.has(node.id) || node.id === 'End') {
-            return false;
-        }
-        seenNodeIds.add(node.id);
-        return true;
-    });
-
-    let flowNodes = [];
-
-    let alarmCode, alarmType;
-    if (Alarms) {
-        const alarmKey = Object.keys(Alarms)[0];
-        if (alarmKey) {
-            alarmCode = alarmKey;
-            alarmType = Alarms[alarmKey]?.alarm_type;
-        }
-    }
-    if (!alarmCode) alarmCode = graph.description;
-    if (!alarmType) alarmType = graph.alarm_type || 'warning';
-
-    const startNode = {
-        id: 'start-node-1',
-        type: 'start',
-        data: { 
-            text: `Alarm ${alarmCode}` || 'Workflow Start',
-            alarmCode,
-            alarmType
-        },
-        style: { width: 80, height: 80 },
-        deletable: false,
-    };
-    flowNodes.push(startNode);
-
-    for (const yamlNode of yamlNodes) {
-        const flowNodeId = yamlNode.id;
-        const nodeData = { text: yamlNode.text || '', action: 'none', file: null };
-
-        if (yamlNode.action) {
-            if (yamlNode.action === 'create_ticket_in_db') {
-                nodeData.action = 'Create Ticket';
-            } else if (yamlNode.action.startsWith('Enviar archivo ')) {
-                nodeData.action = 'Send File';
-                const fileName = yamlNode.action.substring('Enviar archivo '.length);
-                if (files && files.has(fileName)) {
-                    nodeData.file = files.get(fileName);
-                } else {
-                    nodeData.file = { name: fileName };
-                }
-            }
-        }
-        if (yamlNode.decision) nodeData.condition = yamlNode.decision.condition || '';
-
-        const flowNode = { id: flowNodeId, type: 'condition', data: nodeData, style: { width: 160, height: 96 } };
-        flowNodes.push(flowNode);
-
-        if (yamlNode.decision) {
-            const decisionOptions = Object.keys(yamlNode.decision)
-                .filter(k => k !== 'condition' && k !== 'id')
-                .map(o => {
-                    const spaced = o.replace(/_/g, ' ');
-                    const isNumeric = /^-?\d+(\.\d+)?$/.test(spaced);
-                    return isNumeric ? spaced : capitalizeFirstLetter(spaced);
-                });
-            const decisionNodeId = yamlNode.decision.id || `decision-${flowNodeId}`;
-            const decisionNode = { id: decisionNodeId, type: 'decision', data: { options: decisionOptions }, style: { width: 112, height: 112 } };
-            flowNodes.push(decisionNode);
-        }
-    }
-
-    if (layoutNodes) {
-        const exitNodesFromLayout = layoutNodes.filter(n => n.id.startsWith('exit-'));
-        for (const layoutExitNode of exitNodesFromLayout) {
-            if (!flowNodes.find(n => n.id === layoutExitNode.id)) {
-                const exitNode = {
-                    id: layoutExitNode.id,
-                    type: 'exit',
-                    data: { text: 'Workflow End' },
-                    style: { width: layoutExitNode.width || 96, height: layoutExitNode.height || 96 }
-                };
-                flowNodes.push(exitNode);
-            }
-        }
-    }
-
-    return { nodes: flowNodes };
 };
 
 const generateFlowFromYaml = (yamlData, files) => {
@@ -569,28 +575,21 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
         }
 
         if (initialData?.yaml) {
-            let newNodes, newEdges;
+            let finalNodes, finalEdges;
 
-            if (initialData.layout?.edges) {
-                const result = generateNodesWithLayoutExits(initialData.yaml, initialData.files, initialData.layout.nodes);
-                newNodes = result.nodes;
-                newEdges = initialData.layout.edges;
-            } else {
-                const result = generateFlowFromYaml(initialData.yaml, initialData.files);
-                newNodes = result.nodes;
-                newEdges = result.edges;
-            }
-
-            let finalNodes;
             if (initialData.layout) {
-                finalNodes = applyLayout(newNodes, initialData.layout.nodes);
+                const { nodes, edges } = generateFlowFromLayoutAndYaml(initialData.layout, initialData.yaml, initialData.files);
+                finalNodes = nodes;
+                finalEdges = edges;
             } else {
+                const { nodes: newNodes, edges: newEdges } = generateFlowFromYaml(initialData.yaml, initialData.files);
                 const layouted = getLayoutedElements(newNodes, newEdges);
                 finalNodes = layouted.nodes;
+                finalEdges = layouted.edges;
             }
-
+            
             setNodes(finalNodes);
-            setEdges(newEdges);
+            setEdges(finalEdges);
 
             if (reactFlowInstance && initialData.layout?.viewport) {
                 reactFlowInstance.setViewport(initialData.layout.viewport);
@@ -904,4 +903,3 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
 });
 
 export default FlowDiagram;
-

@@ -190,13 +190,23 @@ function App() {
     zip.file('flowchart.yml', currentYaml);
 
     // 2. Add graph_layout_metadata.json
-    const layoutData = {
-        nodes: nodes.map(n => ({
+    const nodesForLayout = nodes.map(n => {
+        const nodeLayoutData = {
             id: n.id,
+            type: n.type,
             position: n.position,
             width: n.width,
             height: n.height,
-        })),
+            data: { ...n.data },
+        };
+        if (nodeLayoutData.data.file instanceof File) {
+            nodeLayoutData.data.file = { name: nodeLayoutData.data.file.name };
+        }
+        return nodeLayoutData;
+    });
+
+    const layoutData = {
+        nodes: nodesForLayout,
         edges: edges,
         viewport,
     };
