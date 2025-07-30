@@ -142,7 +142,7 @@ function generateYaml(nodes, edges) {
             const nextNode = nodesMap.get(outgoingEdges[0].target);
             if (nextNode) {
                 if (nextNode.type === 'exit') {
-                    push(`      next: "End"`);
+                    push(`      next: "end"`);
                 } else if (nextNode.type === 'decision') {
                     decisionNodeIdForThisBlock = nextNode.id;
                     push(`      decision:`);
@@ -153,7 +153,7 @@ function generateYaml(nodes, edges) {
                     for (const edge of decisionEdges) {
                         const targetNode = nodesMap.get(edge.target);
                         if (targetNode) {
-                            const targetId = targetNode.type === 'exit' ? 'End' : getYamlNodeId(edge.target);
+                            const targetId = targetNode.type === 'exit' ? 'end' : getYamlNodeId(edge.target);
                             if (targetId) {
                                 const originalLabel = (edge.data?.label || 'option');
                                 // check if original label is a number before any transformation
@@ -188,7 +188,7 @@ function generateYaml(nodes, edges) {
     }
     
     const endNodeStartLine = yamlLines.length + 1;
-    push(`    - id: "End"`);
+    push(`    - id: "end"`);
     push(`      text: "Fin del proceso"`);
     const endNodeEndLine = yamlLines.length;
     
@@ -246,7 +246,7 @@ const generateFlowFromLayoutAndYaml = (layoutData, yamlData, files) => {
     // 2. Parse YAML to get logical structure and update node data.
     const seenNodeIds = new Set();
     const yamlGraphNodes = graph.nodes.filter(node => {
-        if (!node?.id || seenNodeIds.has(node.id) || node.id === 'End') return false;
+        if (!node?.id || seenNodeIds.has(node.id) || node.id === 'end') return false;
         seenNodeIds.add(node.id);
         return true;
     });
@@ -383,7 +383,7 @@ const generateFlowFromYaml = (yamlData, files) => {
 
     const seenNodeIds = new Set();
     const yamlNodes = graph.nodes.filter(node => {
-        if (!node?.id || seenNodeIds.has(node.id) || node.id === 'End') {
+        if (!node?.id || seenNodeIds.has(node.id) || node.id === 'end') {
             return false;
         }
         seenNodeIds.add(node.id);
@@ -461,8 +461,8 @@ const generateFlowFromYaml = (yamlData, files) => {
 
     const allTargets = new Set();
     yamlNodes.forEach(node => {
-        if (node.next && node.next !== 'End') allTargets.add(node.next);
-        if (node.decision) Object.entries(node.decision).forEach(([k, v]) => k !== 'condition' && k !== 'id' && v !== 'End' && allTargets.add(v));
+        if (node.next && node.next !== 'end') allTargets.add(node.next);
+        if (node.decision) Object.entries(node.decision).forEach(([k, v]) => k !== 'condition' && k !== 'id' && v !== 'end' && allTargets.add(v));
     });
     const entryYamlNode = yamlNodes.find(n => !allTargets.has(n.id)) || yamlNodes[0];
 
@@ -489,7 +489,7 @@ const generateFlowFromYaml = (yamlData, files) => {
         }
 
         if (yamlNode.next) {
-            const target = yamlNode.next === 'End' ? getExitNode() : flowNodeMap.get(yamlNode.next);
+            const target = yamlNode.next === 'end' ? getExitNode() : flowNodeMap.get(yamlNode.next);
             flowEdges.push(createEdge(target));
         } else if (yamlNode.decision) {
             const decisionFlowNode = flowNodes.find(n => n.id === sourceFlowNode.decisionNodeId);
@@ -502,7 +502,7 @@ const generateFlowFromYaml = (yamlData, files) => {
                 const isNumeric = /^-?\d+(\.\d+)?$/.test(spacedKey);
                 const label = isNumeric ? spacedKey : capitalizeFirstLetter(spacedKey);
 
-                const target = value === 'End' ? getExitNode(key) : flowNodeMap.get(value);
+                const target = value === 'end' ? getExitNode(key) : flowNodeMap.get(value);
                 flowEdges.push({ id: `e-${decisionFlowNode.id}-${target.id}-${key}`, source: decisionFlowNode.id, target: target.id, type: 'custom', data: { label }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }});
             });
         }
@@ -879,4 +879,3 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
 });
 
 export default FlowDiagram;
-
