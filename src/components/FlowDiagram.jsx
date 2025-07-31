@@ -1,6 +1,6 @@
 import '@reactflow/node-resizer/dist/style.css';
 import * as dagre from 'dagre';
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, useContext, createContext } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, useContext, createContext, useMemo } from 'react';
 import ReactFlow, {
     Background,
     Controls,
@@ -564,6 +564,82 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
         setEdges(nextState.edges);
     }, [history, nodes, edges, setNodes, setEdges]);
     
+    const hasSelection = useMemo(() => nodes.some(n => n.selected), [nodes]);
+
+    const copySelection = useCallback(() => {
+        const selectedNodes = nodes.filter(n => n.selected && n.deletable !== false);
+        if (selectedNodes.length === 0) return;
+    
+        const selectedNodeIds = new Set(selectedNodes.map(n => n.id));
+        const selectedEdges = edges.filter(e => selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target));
+        clipboard.current = { nodes: selectedNodes, edges: selectedEdges };
+        setMenu(null);
+    }, [nodes, edges]);
+    
+    const paste = useCallback(() => {
+        if (!clipboard.current || !menu || !reactFlowInstance) return;
+        
+        takeSnapshot();
+    
+        const { nodes: copiedNodes, edges: copiedEdges } = clipboard.current;
+        
+        if (copiedNodes.length === 0) {
+            setMenu(null);
+            return;
+        }
+        
+        const pastePosition = reactFlowInstance.screenToFlowPosition({
+            x: menu.left,
+            y: menu.top,
+        });
+        
+        let minX = Infinity;
+        let minY = Infinity;
+        copiedNodes.forEach(n => {
+            minX = Math.min(minX, n.position.x);
+            minY = Math.min(minY, n.position.y);
+        });
+    
+        const offsetX = pastePosition.x - minX;
+        const offsetY = pastePosition.y - minY;
+        
+        const idMapping = new Map();
+        const newNodes = copiedNodes.map(node => {
+            const newId = `${node.type}-${Date.now()}-${Math.random()}`;
+            idMapping.set(node.id, newId);
+            return {
+                ...node,
+                id: newId,
+                position: {
+                    x: node.position.x + offsetX,
+                    y: node.position.y + offsetY,
+                },
+                selected: false
+            };
+        });
+        
+        const newEdges = copiedEdges.map(edge => ({
+            ...edge,
+            id: `e-${idMapping.get(edge.source)}-${idMapping.get(edge.target)}`,
+            source: idMapping.get(edge.source),
+            target: idMapping.get(edge.target),
+        }));
+    
+        setNodes((nds) => nds.concat(newNodes));
+        setEdges((eds) => eds.concat(newEdges));
+        setMenu(null);
+    }, [reactFlowInstance, menu, takeSnapshot, setNodes, setEdges]);
+    
+    const handleUndo = useCallback(() => {
+        undo();
+        setMenu(null);
+    }, [undo]);
+    
+    const handleRedo = useCallback(() => {
+        redo();
+        setMenu(null);
+    }, [redo]);
+
     useImperativeHandle(ref, () => ({
         getFlowData() {
             const { yamlString, lineMap } = generateYaml(nodes, edges);
@@ -1014,6 +1090,21 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
                         <li onClick={() => onAddNode('condition')}>Condition</li>
                         <li onClick={() => onAddNode('decision')}>Decision</li>
                         <li onClick={() => onAddNode('exit')}>Exit</li>
+                    </ul>
+                    <div className="context-menu-separator" />
+                    <ul>
+                        <li className={!hasSelection ? 'disabled' : ''} onClick={hasSelection ? copySelection : undefined}>
+                            Copy
+                        </li>
+                        <li className={!clipboard.current ? 'disabled' : ''} onClick={clipboard.current ? paste : undefined}>
+                            Paste
+                        </li>
+                        <li className={history.past.length === 0 ? 'disabled' : ''} onClick={history.past.length > 0 ? handleUndo : undefined}>
+                            Undo
+                        </li>
+                        <li className={history.future.length === 0 ? 'disabled' : ''} onClick={history.future.length > 0 ? handleRedo : undefined}>
+                            Redo
+                        </li>
                     </ul>
                 </div>
             )}
