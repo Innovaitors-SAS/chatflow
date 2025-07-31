@@ -150,20 +150,26 @@ function generateYaml(nodes, edges) {
                     push(`        condition: "${condition}"`);
 
                     const decisionEdges = edgesBySource[nextNode.id] || [];
+                    const processedKeys = new Set();
                     for (const edge of decisionEdges) {
                         const targetNode = nodesMap.get(edge.target);
                         if (targetNode) {
                             const targetId = targetNode.type === 'exit' ? 'end' : getYamlNodeId(edge.target);
                             if (targetId) {
                                 const originalLabel = (edge.data?.label || 'option');
-                                // check if original label is a number before any transformation
+                                
                                 const isNumeric = /^-?\d+(\.\d+)?$/.test(originalLabel);
+                                const yamlKey = isNumeric ? originalLabel : originalLabel.replace(/ /g, '_').toLowerCase();
+                                
+                                if (processedKeys.has(yamlKey)) {
+                                    continue; // Enforce unique keys in YAML
+                                }
+                                processedKeys.add(yamlKey);
                                 
                                 if (isNumeric) {
                                     push(`        "${originalLabel}": "${targetId}"`);
                                 } else {
-                                    const label = originalLabel.replace(/ /g, '_').toLowerCase();
-                                    push(`        ${label}: "${targetId}"`);
+                                    push(`        ${yamlKey}: "${targetId}"`);
                                 }
                             }
                         }
@@ -699,26 +705,62 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
             return acc;
         }, {});
 
+        const nodesMap = new Map(nodes.map(n => [n.id, n]));
         let nodesChanged = false;
+
         const newNodes = nodes.map(node => {
             if (node.type === 'decision') {
                 const outgoingEdges = edgesBySource[node.id] || [];
                 const nodeOptions = new Set(node.data.options || []);
                 
                 let hasWarning = outgoingEdges.length < nodeOptions.size;
+                let warningMessage = hasWarning ? "Not all options are connected." : "";
 
                 if (!hasWarning) {
                     for (const edge of outgoingEdges) {
-                        if (!nodeOptions.has(edge.data?.label)) {
+                        if (edge.data?.label && !nodeOptions.has(edge.data.label)) {
                             hasWarning = true;
+                            warningMessage = "An outgoing connection's label does not match any defined option.";
                             break;
                         }
                     }
                 }
 
-                if ((node.data.hasWarning || false) !== hasWarning) {
+                if (!hasWarning) {
+                    const labels = outgoingEdges.map(e => e.data?.label).filter(Boolean);
+                    if (new Set(labels).size < labels.length) {
+                        hasWarning = true;
+                        warningMessage = "There are duplicate option connections.";
+                    }
+                }
+
+                if ((node.data.hasWarning || false) !== hasWarning || node.data.warningMessage !== warningMessage) {
                     nodesChanged = true;
-                    return { ...node, data: { ...node.data, hasWarning } };
+                    return { ...node, data: { ...node.data, hasWarning, warningMessage } };
+                }
+            } else if (node.type === 'condition') {
+                const outgoingEdges = edgesBySource[node.id] || [];
+                let hasWarning = false;
+                let warningMessage = '';
+
+                if (outgoingEdges.length === 0) {
+                    hasWarning = true;
+                    warningMessage = 'Condition node is not connected to any other node.';
+                } else if (outgoingEdges.length > 1) {
+                    hasWarning = true;
+                    warningMessage = 'Condition node has more than one outgoing connection.';
+                } else {
+                    const targetNodeId = outgoingEdges[0].target;
+                    const targetNode = nodesMap.get(targetNodeId);
+                    if (!targetNode || (targetNode.type !== 'exit' && targetNode.type !== 'decision')) {
+                        hasWarning = true;
+                        warningMessage = 'Condition node must be connected to a Decision or an Exit node.';
+                    }
+                }
+                
+                if ((node.data.hasWarning || false) !== hasWarning || node.data.warningMessage !== warningMessage) {
+                    nodesChanged = true;
+                    return { ...node, data: { ...node.data, hasWarning, warningMessage } };
                 }
             }
             return node;

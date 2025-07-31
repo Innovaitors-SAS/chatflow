@@ -142,13 +142,13 @@ const ConditionActionNode = ({ id, data, selected }) => {
     const nodeStyle = {
         width: '100%',
         height: '100%',
-        backgroundColor: 'var(--card)',
+        backgroundColor: data.hasWarning ? 'rgba(253, 224, 71, 0.2)' : 'var(--card)',
         borderRadius: 'var(--radius)',
         border: `4px solid ${data.isTested ? 'var(--tested)' : (selected ? 'var(--ring)' : 'var(--foreground)')}`,
         position: 'relative',
         color: 'var(--card-foreground)',
         opacity: data.isDimmed ? 0.3 : 1,
-        transition: 'opacity 0.2s, border-color 0.2s',
+        transition: 'opacity 0.2s, border-color 0.2s, background-color 0.2s',
         pointerEvents: data.isDimmed ? 'none' : 'auto',
     };
 
@@ -185,6 +185,36 @@ const ConditionActionNode = ({ id, data, selected }) => {
 
     return (
         <div ref={nodeRef} style={nodeStyle} onDoubleClick={() => setIsMenuOpen(true)}>
+            {data.hasWarning && (
+                <div
+                    title={data.warningMessage || "This node has a configuration warning."}
+                    style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        zIndex: 10,
+                        width: 24,
+                        height: 24,
+                        cursor: 'help'
+                    }}
+                >
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        background: 'black',
+                        color: 'yellow',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 16,
+                        fontWeight: 'bold',
+                        boxShadow: '0 0 5px rgba(0,0,0,0.5)',
+                    }}>
+                        !
+                    </div>
+                </div>
+            )}
             {renderActionIcon()}
             <NodeResizer isVisible={selected} minWidth={160} minHeight={120} keepAspectRatio lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }} />

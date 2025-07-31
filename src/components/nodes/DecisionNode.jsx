@@ -54,19 +54,19 @@ const DecisionNode = ({ id, data, selected }) => {
             style={{
                 width: '100%',
                 height: '100%',
-                backgroundColor: 'var(--card)',
+                backgroundColor: data.hasWarning ? 'rgba(253, 224, 71, 0.2)' : 'var(--card)',
                 transform: 'rotate(45deg)',
                 border: `4px solid ${data.isTested ? 'var(--tested)' : (selected ? 'var(--ring)' : 'var(--foreground)')}`,
                 color: 'var(--card-foreground)',
                 opacity: data.isDimmed ? 0.3 : 1,
-                transition: 'opacity 0.2s, border-color 0.2s',
+                transition: 'opacity 0.2s, border-color 0.2s, background-color 0.2s',
                 pointerEvents: data.isDimmed ? 'none' : 'auto',
                 position: 'relative'
             }}
         >
             {data.hasWarning && (
                 <div
-                    title="Not all options are connected"
+                    title={data.warningMessage || "This node has a configuration issue."}
                     style={{
                         position: 'absolute',
                         top: '15%',
@@ -207,3 +207,4 @@ const DecisionNode = ({ id, data, selected }) => {
 };
 
 export default DecisionNode;
+
