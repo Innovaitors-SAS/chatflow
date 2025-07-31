@@ -1,6 +1,6 @@
 import '@reactflow/node-resizer/dist/style.css';
 import * as dagre from 'dagre';
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, createContext, useContext } from 'react';
 import ReactFlow, {
     Background,
     Controls,
@@ -10,7 +10,9 @@ import ReactFlow, {
     SelectionMode,
     addEdge,
     useEdgesState,
-    useNodesState
+    useNodesState,
+    applyNodeChanges,
+    applyEdgeChanges
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { v4 as uuidv4 } from 'uuid';
@@ -19,6 +21,10 @@ import ConditionActionNode from './nodes/ConditionActionNode';
 import DecisionNode from './nodes/DecisionNode';
 import GoToExitNode from './nodes/GoToExitNode';
 import StartNode from './nodes/StartNode';
+
+export const HistoryContext = createContext({
+    takeSnapshot: () => {},
+});
 
 const capitalizeFirstLetter = (str) => {
     if (!str) return str;
@@ -536,12 +542,14 @@ const applyLayout = (nodes, layoutNodes) => {
 };
 
 
-const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTitle, onFlowTitleChange, onFlowChange, isSidebarVisible }, ref) => {
+const FlowDiagramInner = forwardRef(({ onYamlChange, initialData, testedPath, flowTitle, onFlowTitleChange, onFlowChange, isSidebarVisible }, ref) => {
     const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [reactFlowInstance, setReactFlowInstance] = useState(null);
     const selectedNodeIds = useRef(new Set());
     const [menu, setMenu] = useState(null);
+    const clipboard = useRef(null);
+    const { takeSnapshot } = useContext(HistoryContext);
 
     useImperativeHandle(ref, () => ({
         getFlowData() {
@@ -556,11 +564,34 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
         }
     }));
 
+    const onNodesChangeWithHistory = useCallback((changes) => {
+        const isUndoableChange = changes.some(change =>
+            change.type === 'remove' ||
+            (change.type === 'position' && !change.dragging) ||
+            (change.type === 'dimensions' && !change.resizing)
+        );
+
+        if (isUndoableChange) {
+            takeSnapshot();
+        }
+        onNodesChange(changes);
+    }, [onNodesChange, takeSnapshot]);
+
+    const onEdgesChangeWithHistory = useCallback((changes) => {
+        const isUndoableChange = changes.some(change => change.type === 'remove');
+        if (isUndoableChange) {
+            takeSnapshot();
+        }
+        onEdgesChange(changes);
+    }, [onEdgesChange, takeSnapshot]);
+
+
     const onLayout = useCallback(() => {
+        takeSnapshot();
         const layouted = getLayoutedElements(nodes, edges);
         setNodes(layouted.nodes);
         setEdges(layouted.edges);
-    }, [nodes, edges, setNodes, setEdges]);
+    }, [nodes, edges, setNodes, setEdges, takeSnapshot]);
 
     useEffect(() => {
         const startNode = nodes.find(n => n.type === 'start');
@@ -773,6 +804,7 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
 
     const onConnect = useCallback(
         (params) => {
+            takeSnapshot();
             const sourceNode = nodes.find((node) => node.id === params.source);
 
             if (sourceNode?.type === 'decision') {
@@ -800,7 +832,7 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
                 markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }
             }, eds));
         },
-        [nodes, edges, setEdges]
+        [nodes, edges, setEdges, takeSnapshot]
     );
 
     const onPaneClick = useCallback(() => setMenu(null), [setMenu]);
@@ -819,6 +851,8 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
     const onAddNode = useCallback(
         (type) => {
             if (!reactFlowInstance || !menu) return;
+
+            takeSnapshot();
 
             const position = reactFlowInstance.screenToFlowPosition({
                 x: menu.left,
@@ -845,18 +879,17 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
             setNodes((nds) => nds.concat(newNode));
             setMenu(null);
         },
-        [reactFlowInstance, setNodes, menu]
+        [reactFlowInstance, setNodes, menu, takeSnapshot]
     );
 
     return (
-        <div style={{ height: '100%', width: '100%' }}>
-            <ReactFlowProvider>
+        <div style={{ height: '100%', width: '100%' }} className="dndflow">
                 <div style={{ height: '100%', width: '100%' }}>
                     <ReactFlow
                         nodes={nodes}
                         edges={edges}
-                        onNodesChange={onNodesChange}
-                        onEdgesChange={onEdgesChange}
+                        onNodesChange={onNodesChangeWithHistory}
+                        onEdgesChange={onEdgesChangeWithHistory}
                         onConnect={onConnect}
                         onInit={setReactFlowInstance}
                         onPaneClick={onPaneClick}
@@ -905,7 +938,6 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
                         </Panel>
                     </ReactFlow>
                 </div>
-            </ReactFlowProvider>
             {menu && (
                 <div className="context-menu" style={{ top: menu.top, left: menu.left }}>
                     <div className="context-menu-header">Add Node</div>
@@ -919,5 +951,177 @@ const FlowDiagram = forwardRef(({ onYamlChange, initialData, testedPath, flowTit
         </div>
     );
 });
+FlowDiagramInner.displayName = 'FlowDiagramInner';
+
+
+const FlowDiagram = forwardRef((props, ref) => {
+    const [history, setHistory] = useState({ past: [], future: [] });
+    const flowRef = useRef(null);
+
+    useImperativeHandle(ref, () => flowRef.current, []);
+
+    const takeSnapshot = useCallback(() => {
+        if (!flowRef.current) return;
+        const { nodes, edges } = flowRef.current.getFlowData();
+        setHistory(h => ({
+            ...h,
+            past: [...h.past, { nodes, edges }],
+            future: [],
+        }));
+    }, []);
+
+    const undo = useCallback(() => {
+        if (history.past.length === 0) return;
+        if (!flowRef.current) return;
+
+        const { nodes, edges } = flowRef.current.getFlowData();
+
+        const lastState = history.past[history.past.length - 1];
+        setHistory({
+            past: history.past.slice(0, history.past.length - 1),
+            future: [{ nodes, edges }, ...history.future],
+        });
+        
+        flowRef.current.getFlowData().nodes = lastState.nodes; // temporary hack to update nodes
+        flowRef.current.setNodes(lastState.nodes);
+        flowRef.current.setEdges(lastState.edges);
+    }, [history]);
+
+    const redo = useCallback(() => {
+        if (history.future.length === 0) return;
+        if (!flowRef.current) return;
+
+        const { nodes, edges } = flowRef.current.getFlowData();
+
+        const nextState = history.future[0];
+        setHistory({
+            past: [...history.past, { nodes, edges }],
+            future: history.future.slice(1),
+        });
+
+        flowRef.current.getFlowData().nodes = nextState.nodes;
+        flowRef.current.setNodes(nextState.nodes);
+        flowRef.current.setEdges(nextState.edges);
+    }, [history]);
+    
+    const clipboard = useRef(null);
+    useEffect(() => {
+        const onKeyDown = (event) => {
+            if (!flowRef.current) return;
+            const flowInstance = flowRef.current.getReactFlowInstance();
+            if (!flowInstance) return;
+
+            if (event.ctrlKey || event.metaKey) {
+                switch (event.key) {
+                    case 'c': {
+                        event.preventDefault();
+                        const { nodes, edges } = flowRef.current.getFlowData();
+                        const selectedNodes = nodes.filter(n => n.selected && n.deletable !== false);
+                        if (selectedNodes.length === 0) return;
+
+                        const selectedNodeIds = new Set(selectedNodes.map(n => n.id));
+                        const selectedEdges = edges.filter(e => selectedNodeIds.has(e.source) && selectedNodeIds.has(e.target));
+                        clipboard.current = { nodes: selectedNodes, edges: selectedEdges };
+                        break;
+                    }
+                    case 'v': {
+                        event.preventDefault();
+                        if (!clipboard.current) return;
+                        
+                        takeSnapshot();
+
+                        const { nodes: copiedNodes, edges: copiedEdges } = clipboard.current;
+                        const { nodes, edges } = flowRef.current.getFlowData();
+                        const idMapping = new Map();
+                        const newNodes = copiedNodes.map(node => {
+                            const newId = `${node.type}-${Date.now()}-${Math.random()}`;
+                            idMapping.set(node.id, newId);
+                            return {
+                                ...node,
+                                id: newId,
+                                position: {
+                                    x: node.position.x + 20,
+                                    y: node.position.y + 20,
+                                },
+                                selected: false
+                            };
+                        });
+                        const newEdges = copiedEdges.map(edge => ({
+                            ...edge,
+                            id: `e-${idMapping.get(edge.source)}-${idMapping.get(edge.target)}`,
+                            source: idMapping.get(edge.source),
+                            target: idMapping.get(edge.target),
+                        }));
+
+                        flowRef.current.setNodes([...nodes, ...newNodes]);
+                        flowRef.current.setEdges([...edges, ...newEdges]);
+                        break;
+                    }
+                    case 'z':
+                        event.preventDefault();
+                        undo();
+                        break;
+                    case 'y':
+                        event.preventDefault();
+                        redo();
+                        break;
+                }
+            }
+        };
+
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, [takeSnapshot, undo, redo]);
+
+    // This is a workaround because `useNodesState` is inside the inner component now.
+    const internalRef = useRef({});
+    useImperativeHandle(ref, () => ({
+        getFlowData: () => {
+            if (!internalRef.current.getFlowData) return { nodes: [], edges: [], viewport: null, yaml: '', lineMap: new Map() };
+            return internalRef.current.getFlowData();
+        },
+    }));
+
+    const FlowDiagramWrapper = () => {
+        const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+        const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+        const [instance, setInstance] = useState(null);
+
+        internalRef.current.getFlowData = () => ({
+            nodes, edges, viewport: instance?.getViewport(), ...generateYaml(nodes, edges)
+        });
+        internalRef.current.setNodes = setNodes;
+        internalRef.current.setEdges = setEdges;
+        internalRef.current.getReactFlowInstance = () => instance;
+
+
+        return (
+            <FlowDiagramInner
+                {...props}
+                ref={r => { if(r) {
+                    r.setNodes = setNodes;
+                    r.setEdges = setEdges;
+                    r.getReactFlowInstance = () => instance;
+                }}}
+                onInit={setInstance}
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+            />
+        );
+    };
+
+    return (
+        <HistoryContext.Provider value={{ takeSnapshot }}>
+            <ReactFlowProvider>
+                <FlowDiagramWrapper />
+            </ReactFlowProvider>
+        </HistoryContext.Provider>
+    );
+});
+
+FlowDiagram.displayName = 'FlowDiagram';
 
 export default FlowDiagram;
+

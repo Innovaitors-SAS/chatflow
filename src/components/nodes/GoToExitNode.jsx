@@ -1,12 +1,14 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useContext } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
+import { HistoryContext } from '../FlowDiagram';
 
 const GoToExitNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [text, setText] = useState(data.text || '');
     const nodeRef = useRef(null);
+    const { takeSnapshot } = useContext(HistoryContext);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -33,6 +35,7 @@ const GoToExitNode = ({ id, data, selected }) => {
     }, [isMenuOpen, data.text]);
 
     const handleSave = () => {
+        takeSnapshot();
         setNodes(nodes => nodes.map(node =>
             node.id === id ? { ...node, data: { ...node.data, text } } : node
         ));
@@ -67,7 +70,7 @@ const GoToExitNode = ({ id, data, selected }) => {
 
     return (
         <div ref={nodeRef} style={nodeStyle} onDoubleClick={() => setIsMenuOpen(true)}>
-            <NodeResizer isVisible={selected} keepAspectRatio minWidth={64} minHeight={64} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
+            <NodeResizer isVisible={selected} keepAspectRatio minWidth={64} minHeight={64} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} onResizeEnd={takeSnapshot} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }} />
             
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{

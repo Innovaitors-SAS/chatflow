@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useContext } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
+import { HistoryContext } from '../FlowDiagram';
 
 const StartNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
@@ -8,6 +9,7 @@ const StartNode = ({ id, data, selected }) => {
     const [alarmCode, setAlarmCode] = useState(data.alarmCode || '');
     const [alarmType, setAlarmType] = useState(data.alarmType || 'warning');
     const nodeRef = useRef(null);
+    const { takeSnapshot } = useContext(HistoryContext);
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -35,6 +37,7 @@ const StartNode = ({ id, data, selected }) => {
     }, [isMenuOpen, data.alarmCode, data.alarmType]);
 
     const handleSave = () => {
+        takeSnapshot();
         const newText = `Alarm ${alarmCode}`;
         setNodes(nodes => nodes.map(node =>
             node.id === id ? { ...node, data: { ...node.data, text: newText, alarmCode, alarmType } } : node
@@ -87,7 +90,7 @@ const StartNode = ({ id, data, selected }) => {
 
     return (
         <div ref={nodeRef} style={nodeStyle} onDoubleClick={() => setIsMenuOpen(true)}>
-            <NodeResizer isVisible={selected} minWidth={80} minHeight={80} keepAspectRatio lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
+            <NodeResizer isVisible={selected} minWidth={80} minHeight={80} keepAspectRatio lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} onResizeEnd={takeSnapshot} />
             
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{
                 position: 'absolute',

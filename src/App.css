@@ -86,6 +86,7 @@
     line-height: 1.4;
     margin: 0;
     color: var(--foreground);
+    overflow-wrap: normal;
 }
 
 .yaml-viewer strong {
@@ -112,10 +113,12 @@
     padding-right: 1em;
     color: var(--muted-foreground);
     user-select: none;
+    flex-shrink: 0;
 }
 
 .line-content {
-    white-space: pre;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
 }
 
 .yaml-placeholder {
@@ -273,4 +276,3 @@
     background: var(--secondary);
     color: var(--secondary-foreground);
 }
-

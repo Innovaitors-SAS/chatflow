@@ -1,12 +1,14 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useContext } from 'react';
 import { Handle, Position, useReactFlow } from 'reactflow';
 import { NodeResizer } from '@reactflow/node-resizer';
+import { HistoryContext } from '../FlowDiagram';
 
 const DecisionNode = ({ id, data, selected }) => {
     const { setNodes } = useReactFlow();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [options, setOptions] = useState(data.options || ['Yes', 'No']);
     const nodeRef = useRef(null);
+    const { takeSnapshot } = useContext(HistoryContext);
 
     useEffect(() => {
         if (isMenuOpen) {
@@ -41,6 +43,7 @@ const DecisionNode = ({ id, data, selected }) => {
     };
 
     const handleSave = () => {
+        takeSnapshot();
         setNodes(nodes => nodes.map(node =>
             node.id === id ? { ...node, data: { ...node.data, options } } : node
         ));
@@ -95,7 +98,7 @@ const DecisionNode = ({ id, data, selected }) => {
                     </div>
                 </div>
             )}
-            <NodeResizer isVisible={selected} keepAspectRatio minWidth={80} minHeight={80} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} />
+            <NodeResizer isVisible={selected} keepAspectRatio minWidth={80} minHeight={80} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} onResizeEnd={takeSnapshot} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }}/>
 
             <div style={{ transform: 'rotate(-45deg)', position: 'absolute', top: -12, right: -12, zIndex: 10 }}>
@@ -207,4 +210,3 @@ const DecisionNode = ({ id, data, selected }) => {
 };
 
 export default DecisionNode;
-
