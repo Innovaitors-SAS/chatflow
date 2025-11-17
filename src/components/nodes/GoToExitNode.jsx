@@ -109,7 +109,7 @@ const GoToExitNode = ({ id, data, selected }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 10,
-                    width: 200,
+                    width: 250,
                     textAlign: 'left',
                     pointerEvents: 'all'
                 }}>

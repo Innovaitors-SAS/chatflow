@@ -258,7 +258,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 10,
-                    width: 250,
+                    width: 300,
                     pointerEvents: 'all',
                     maxHeight: 'calc(100vh - 50px)',
                     overflowY: 'auto'
@@ -279,12 +279,11 @@ const ConditionActionNode = ({ id, data, selected }) => {
 
                     <div>
                         <div style={{ marginBottom: 5, fontSize: 12, color: 'var(--muted-foreground)' }}>Condition:</div>
-                        <input
-                            type="text"
+                        <textarea
                             value={condition}
                             onChange={(e) => setCondition(e.target.value)}
                             placeholder="Enter condition"
-                            style={inputStyle}
+                            style={{ ...inputStyle, minHeight: 120, resize: 'vertical' }}
                             spellCheck="true"
                             lang="es"
                         />
@@ -327,7 +326,8 @@ const ConditionActionNode = ({ id, data, selected }) => {
                     fontSize: 14,
                     border: '1px solid var(--border)',
                     textAlign: 'center',
-                    overflowWrap: 'break-word'
+                    overflowWrap: 'break-word',
+                    whiteSpace: 'pre-wrap'
                 }}>
                     <code>{data.condition || "No condition."}</code>
                 </div>

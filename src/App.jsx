@@ -214,7 +214,7 @@ function App() {
             extraMetadata.file(node.data.file.name, node.data.file);
         }
     }
-    
+
     // 4. Add icon.svg
     const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path><path d="m7 12-2-2 2-2"></path><path d="m12 12 2-2-2-2"></path></svg>`;
     zip.file('icon.svg', iconSvg);
@@ -224,15 +224,15 @@ function App() {
     const url = URL.createObjectURL(zipBlob);
     const a = document.createElement('a');
     a.href = url;
-    
+
     const startNode = nodes.find(n => n.type === 'start');
     let alarmCode = 'flow';
     if (startNode?.data?.alarmCode) {
         alarmCode = startNode.data.alarmCode;
     }
-    
+
     a.download = `${alarmCode}_flow.chatflow`;
-    
+
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -266,9 +266,9 @@ function App() {
     const url = URL.createObjectURL(zipBlob);
     const a = document.createElement('a');
     a.href = url;
-    
+
     a.download = `${alarmCode}_flow.zip`;
-    
+
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -282,10 +282,10 @@ function App() {
     const zip = new JSZip();
     try {
         const content = await zip.loadAsync(file);
-        
+
         const yamlFile = content.file('flowchart.yml');
         const layoutFile = content.file('graph_layout_metadata.json');
-        
+
         if (!yamlFile) {
             alert('ChatFlow file must contain a "flowchart.yml" file.');
             return;
@@ -298,7 +298,7 @@ function App() {
             alert('Invalid YAML structure. Expected a "graph" or "Alarms" property.');
             return;
         }
-        
+
         let layoutData = null;
         if (layoutFile) {
             const layoutContent = await layoutFile.async('string');
@@ -320,7 +320,7 @@ function App() {
             });
             await Promise.all(filePromises);
         }
-        
+
         handleCloseChatbot();
 
         setInitialData({

@@ -136,7 +136,7 @@ const DecisionNode = ({ id, data, selected }) => {
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 8,
-                    width: 200,
+                    width: 250,
                     pointerEvents: 'all'
                 }}>
                     <div style={{ fontWeight: 'bold' }}>Edit Options</div>

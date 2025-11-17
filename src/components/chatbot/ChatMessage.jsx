@@ -9,7 +9,7 @@ const ChatMessage = ({ message, onOptionSelect }) => {
     const formatText = (text) => {
         // Simple markdown-like formatting
         const formattedText = text
-            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/`(.*?)`/gs, '<code>$1</code>')
             .replace(/\*(.*?)\*/g, '<strong>$1</strong>')
             .replace(/\n/g, '<br/>');
         return { __html: formattedText };

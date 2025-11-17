@@ -150,7 +150,7 @@ function generateYaml(nodes, edges) {
                 } else if (nextNode.type === 'decision') {
                     decisionNodeIdForThisBlock = nextNode.id;
                     push(`      decision:`);
-                    const condition = (node.data.condition || '').replace(/"/g, '\\"');
+                    const condition = (node.data.condition || '').replace(/"/g, '\\"').replace(/\n/g, '\\n');
                     push(`        condition: "${condition}"`);
 
                     const decisionEdges = edgesBySource[nextNode.id] || [];
@@ -658,8 +658,12 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
             if (!reactFlowInstance) return;
 
             if (event.ctrlKey || event.metaKey) {
+                const activeElement = document.activeElement;
+                const isInputFocused = activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
+
                 switch (event.key) {
                     case 'c': {
+                        if (isInputFocused) return;
                         event.preventDefault();
                         const selectedNodes = nodes.filter(n => n.selected && n.deletable !== false);
                         if (selectedNodes.length === 0) return;
@@ -670,6 +674,7 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
                         break;
                     }
                     case 'v': {
+                        if (isInputFocused) return;
                         event.preventDefault();
                         if (!clipboard.current) return;
                         
