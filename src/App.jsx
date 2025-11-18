@@ -5,6 +5,7 @@ import './App.css';
 import FlowDiagram from './components/FlowDiagram';
 import Sidebar from './components/Sidebar';
 import Chatbot from './components/chatbot/Chatbot';
+import HelpTutorial from './components/HelpTutorial';
 
 // Helper functions for persistence
 const debounce = (func, wait) => {
@@ -92,6 +93,8 @@ function App() {
   const [sessionPath, setSessionPath] = useState({ nodes: new Set(), edges: new Set() });
   const flowDiagramRef = useRef(null);
   const [flowTitle, setFlowTitle] = useState('Flow Builder');
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [indexYamlData, setIndexYamlData] = useState(null);
 
   const saveData = useCallback(() => {
       if (!flowDiagramRef.current) return;
@@ -156,6 +159,22 @@ function App() {
               localStorage.removeItem('chatflow-data');
           }
       }
+      
+      const fetchIndexYaml = async () => {
+        try {
+            const response = await fetch('/index.yaml', { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const text = await response.text();
+            const data = yaml.load(text);
+            setIndexYamlData(data);
+        } catch (e) {
+            console.error("Failed to load index.yaml. It should be in the 'public' folder.", e);
+            setIndexYamlData({ Config: {}, Alarms: {} });
+        }
+      };
+      fetchIndexYaml();
   }, []);
 
   const totalHighlightedPath = useMemo(() => ({
@@ -275,6 +294,92 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const handlePushToIndex = async () => {
+    if (!flowDiagramRef.current || !indexYamlData) {
+        alert("Index.yaml data not loaded yet. Please try again in a moment.");
+        return;
+    }
+
+    if (!window.confirm("¿Está seguro de que desea enviar los metadatos del flujo actual a index.yaml? Esto actualizará la entrada y podría sobreescribir el archivo.")) {
+        return;
+    }
+
+    const { yaml: currentYaml } = flowDiagramRef.current.getFlowData();
+    if (!currentYaml) return;
+
+    const metadataMatch = currentYaml.match(/# ---\n(#(?:.|\n)*)/);
+    if (!metadataMatch) {
+        alert("Could not find metadata block in the generated YAML.");
+        return;
+    }
+
+    try {
+        const metadataString = metadataMatch[1]
+            .split('\n')
+            .map(line => line.replace(/^#\s?/, ''))
+            .join('\n');
+
+        const metadata = yaml.load(metadataString);
+        const alarmCode = Object.keys(metadata)[0];
+
+        if (!alarmCode) {
+            alert("Could not extract alarm code from metadata.");
+            return;
+        }
+
+        const newIndexYamlData = { ...indexYamlData };
+        if (!newIndexYamlData.Alarms) {
+            newIndexYamlData.Alarms = {};
+        }
+
+        // Defensively remove the unwanted example metadata key if it exists.
+        if (newIndexYamlData.Alarms && newIndexYamlData.Alarms['Metadata for Alarms file (for reference)']) {
+            delete newIndexYamlData.Alarms['Metadata for Alarms file (for reference)'];
+        }
+
+        newIndexYamlData.Alarms[alarmCode] = metadata[alarmCode];
+
+        const newIndexYamlString = yaml.dump(newIndexYamlData, { noRefs: true, quotingType: '"' });
+        
+        if (window.showSaveFilePicker) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: 'index.yaml',
+                    types: [{
+                        description: 'YAML files',
+                        accept: { 'text/yaml': ['.yaml', '.yml'] },
+                    }],
+                });
+                const writable = await handle.createWritable();
+                await writable.write(newIndexYamlString);
+                await writable.close();
+                alert('index.yaml guardado exitosamente.');
+            } catch (err) {
+                if (err.name !== 'AbortError') {
+                    console.error('Error saving file:', err);
+                    alert('No se pudo guardar el archivo.');
+                }
+            }
+        } else {
+            const blob = new Blob([newIndexYamlString], { type: 'text/yaml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.yaml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        setIndexYamlData(newIndexYamlData);
+
+    } catch (e) {
+        console.error("Error pushing to index.yaml", e);
+        alert("An error occurred while updating index.yaml. Check console for details.");
+    }
+  };
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -349,6 +454,10 @@ function App() {
       setTestedPath({ nodes: new Set(), edges: new Set() });
       setSessionPath({ nodes: new Set(), edges: new Set() });
   };
+  
+  const handleToggleHelp = () => {
+    setIsHelpOpen(prev => !prev);
+  };
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
@@ -380,13 +489,38 @@ function App() {
           onChange={handleFileUpload}
           style={{ display: 'none' }}
       />
+       <button
+        title="Ayuda"
+        onClick={handleToggleHelp}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12}px`,
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          background: 'var(--primary)',
+          color: 'var(--primary-foreground)',
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1001,
+          transition: 'right 0.3s ease-in-out'
+        }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      </button>
+
       <button
         title="Test Chatbot"
         onClick={handleTestChatbot}
         style={{
           position: 'fixed',
           bottom: '24px',
-          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12 + 56 + 12}px`,
+          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12}px`,
           width: '56px',
           height: '56px',
           borderRadius: '50%',
@@ -411,7 +545,7 @@ function App() {
         style={{
           position: 'fixed',
           bottom: '24px',
-          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12}px`,
+          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12 + 56 + 12}px`,
           width: '56px',
           height: '56px',
           borderRadius: '50%',
@@ -428,6 +562,31 @@ function App() {
         }}
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+      </button>
+      
+      <button
+        title="Push to Index"
+        onClick={handlePushToIndex}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12}px`,
+          width: '56px',
+          height: '56px',
+          borderRadius: '50%',
+          background: 'var(--primary)',
+          color: 'var(--primary-foreground)',
+          border: 'none',
+          cursor: 'pointer',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1001,
+          transition: 'right 0.3s ease-in-out'
+        }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><path d="M12 18v-6" /><path d="m9 15 3-3 3 3" /></svg>
       </button>
 
       <button
@@ -513,6 +672,7 @@ function App() {
               onPathUpdate={setSessionPath}
           />
       )}
+      {isHelpOpen && <HelpTutorial onClose={handleToggleHelp} />}
     </div>
   );
 }

@@ -287,3 +287,90 @@
     background: var(--secondary);
     color: var(--secondary-foreground);
 }
+
+/* Help Tutorial Styles */
+.help-tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.help-tutorial-content {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    width: 90%;
+    max-width: 800px;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.help-tutorial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.help-tutorial-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.help-tutorial-header button {
+    background: none;
+    border: none;
+    color: var(--muted-foreground);
+    font-size: 28px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.help-tutorial-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+.help-tutorial-body section {
+    margin-bottom: 32px;
+}
+
+.help-tutorial-body h3 {
+    font-size: 18px;
+    margin-bottom: 16px;
+    color: var(--foreground);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+}
+
+.node-explanation, .button-explanation {
+    margin-bottom: 24px;
+}
+
+.node-explanation h4, .button-explanation h4 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: var(--ring);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.node-explanation p, .button-explanation p {
+    color: var(--muted-foreground);
+    line-height: 1.6;
+    margin: 0;
+}

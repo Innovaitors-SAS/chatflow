@@ -18,6 +18,7 @@ import CustomEdge from './edges/CustomEdge';
 import ConditionActionNode from './nodes/ConditionActionNode';
 import DecisionNode from './nodes/DecisionNode';
 import GoToExitNode from './nodes/GoToExitNode';
+import GoToNode from './nodes/GoToNode';
 import StartNode from './nodes/StartNode';
 
 export const HistoryContext = createContext({
@@ -33,7 +34,8 @@ const nodeTypes = {
     start: StartNode,
     condition: ConditionActionNode,
     decision: DecisionNode,
-    exit: GoToExitNode
+    exit: GoToExitNode,
+    goto: GoToNode
 };
 
 const edgeTypes = {
@@ -114,7 +116,7 @@ function generateYaml(nodes, edges) {
     push(`  nodes:`);
 
     const yamlNodes = nodes
-        .filter(node => reachableNodeIds.has(node.id) && node.type !== 'start' && node.type !== 'exit')
+        .filter(node => reachableNodeIds.has(node.id) && node.type !== 'start' && node.type !== 'exit' && node.type !== 'goto')
         .sort((a, b) => a.position.y - b.position.y || a.position.x - b.position.x);
 
     const processedNodeIds = new Set();
@@ -147,6 +149,9 @@ function generateYaml(nodes, edges) {
             if (nextNode) {
                 if (nextNode.type === 'exit') {
                     push(`      next: "end"`);
+                } else if (nextNode.type === 'goto') {
+                    const nextAlarmCode = nextNode.data.alarmCode || 'XXXX';
+                    push(`      next: goto__${nextAlarmCode}`);
                 } else if (nextNode.type === 'decision') {
                     decisionNodeIdForThisBlock = nextNode.id;
                     push(`      decision:`);
@@ -158,8 +163,18 @@ function generateYaml(nodes, edges) {
                     for (const edge of decisionEdges) {
                         const targetNode = nodesMap.get(edge.target);
                         if (targetNode) {
-                            const targetId = targetNode.type === 'exit' ? 'end' : getYamlNodeId(edge.target);
-                            if (targetId) {
+                            let targetValue;
+                            let isGoto = false;
+                            if (targetNode.type === 'exit') {
+                                targetValue = 'end';
+                            } else if (targetNode.type === 'goto') {
+                                targetValue = `goto__${targetNode.data.alarmCode || 'XXXX'}`;
+                                isGoto = true;
+                            } else {
+                                targetValue = getYamlNodeId(edge.target);
+                            }
+
+                            if (targetValue) {
                                 const originalLabel = (edge.data?.label || 'option');
                                 
                                 const isNumeric = /^-?\d+(\.\d+)?$/.test(originalLabel);
@@ -170,10 +185,11 @@ function generateYaml(nodes, edges) {
                                 }
                                 processedKeys.add(yamlKey);
                                 
+                                const valueString = isGoto ? targetValue : `"${targetValue}"`;
                                 if (isNumeric) {
-                                    push(`        "${originalLabel}": "${targetId}"`);
+                                    push(`        "${originalLabel}": ${valueString}`);
                                 } else {
-                                    push(`        ${yamlKey}: "${targetId}"`);
+                                    push(`        ${yamlKey}: ${valueString}`);
                                 }
                             }
                         }
@@ -209,16 +225,15 @@ function generateYaml(nodes, edges) {
 
     push(``);
     push(`# ---`);
-    push(`# Metadata for Alarms file (for reference):`);
     push(`#`);
-    push(`#    "${alarmCode}":`);
-    push(`#        name: Alarma ${alarmCode}`);
-    push(`#        file_name: alarma${alarmCode}.yml`);
-    push(`#        alarm_type: ${alarmType}`);
+    push(`#  "${alarmCode}":`);
+    push(`#    name: Alarma ${alarmCode}`);
+    push(`#    file_name: alarma${alarmCode}.yml`);
+    push(`#    alarm_type: ${alarmType}`);
     if (fileNames.size > 0) {
-        push(`#        extra_metadata:`);
+        push(`#    extra_metadata:`);
         const sortedFileNames = Array.from(fileNames).sort();
-        sortedFileNames.forEach(fileName => push(`#            - ${fileName}`));
+        sortedFileNames.forEach(fileName => push(`#      - ${fileName}`));
     }
 
     return { yamlString: yamlLines.join('\n'), lineMap };
@@ -406,6 +421,7 @@ const generateFlowFromYaml = (yamlData, files) => {
     let flowEdges = [];
     const flowNodeMap = new Map();
     const exitNodeMap = new Map();
+    const gotoNodeMap = new Map();
 
     let alarmCode, alarmType;
     if (Alarms) {
@@ -471,8 +487,8 @@ const generateFlowFromYaml = (yamlData, files) => {
 
     const allTargets = new Set();
     yamlNodes.forEach(node => {
-        if (node.next && node.next !== 'end') allTargets.add(node.next);
-        if (node.decision) Object.entries(node.decision).forEach(([k, v]) => k !== 'condition' && k !== 'id' && v !== 'end' && allTargets.add(v));
+        if (node.next && node.next !== 'end' && !String(node.next).startsWith('goto__')) allTargets.add(node.next);
+        if (node.decision) Object.entries(node.decision).forEach(([k, v]) => k !== 'condition' && k !== 'id' && v !== 'end' && !String(v).startsWith('goto__') && allTargets.add(v));
     });
     const entryYamlNode = yamlNodes.find(n => !allTargets.has(n.id)) || yamlNodes[0];
 
@@ -481,26 +497,42 @@ const generateFlowFromYaml = (yamlData, files) => {
         flowEdges.push({ id: `e-${startNode.id}-${entryFlowNode.id}`, source: startNode.id, target: entryFlowNode.id, type: 'custom', data: { label: '' }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' } });
     }
 
+    const getExitNode = (key = 'default') => {
+        if (!exitNodeMap.has(key)) {
+            const exitNodeId = `exit-${key}`;
+            const exitNode = { id: exitNodeId, type: 'exit', data: { text: 'Workflow End' }, style: { width: 96, height: 96 } };
+            flowNodes.push(exitNode);
+            exitNodeMap.set(key, exitNode);
+        }
+        return exitNodeMap.get(key);
+    };
+
+    const getGoToNode = (alarmCode) => {
+        if (!gotoNodeMap.has(alarmCode)) {
+            const gotoNodeId = `goto-${alarmCode}`;
+            const gotoNode = { id: gotoNodeId, type: 'goto', data: { alarmCode }, style: { width: 120, height: 40 } };
+            flowNodes.push(gotoNode);
+            gotoNodeMap.set(alarmCode, gotoNode);
+        }
+        return gotoNodeMap.get(alarmCode);
+    };
+
     for (const yamlNode of yamlNodes) {
         const sourceFlowNode = flowNodeMap.get(yamlNode.id);
         const createEdge = (target, label) => {
             const edge = { id: `e-${label ? `${sourceFlowNode.id}-${label}` : sourceFlowNode.id}-${target.id}`, source: sourceFlowNode.id, target: target.id, type: 'custom', data: { label: label || '' }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' } };
             return edge;
         }
-        
-        const getExitNode = (key = 'default') => {
-            if (!exitNodeMap.has(key)) {
-                const exitNodeId = `exit-${key}`;
-                const exitNode = { id: exitNodeId, type: 'exit', data: { text: 'Workflow End' }, style: { width: 96, height: 96 } };
-                flowNodes.push(exitNode);
-                exitNodeMap.set(key, exitNode);
-            }
-            return exitNodeMap.get(key);
-        }
 
         if (yamlNode.next) {
-            const target = yamlNode.next === 'end' ? getExitNode() : flowNodeMap.get(yamlNode.next);
-            flowEdges.push(createEdge(target));
+            let target;
+            if (String(yamlNode.next).startsWith('goto__')) {
+                const alarmCode = String(yamlNode.next).substring(6);
+                target = getGoToNode(alarmCode);
+            } else {
+                target = yamlNode.next === 'end' ? getExitNode() : flowNodeMap.get(yamlNode.next);
+            }
+            if (target) flowEdges.push(createEdge(target));
         } else if (yamlNode.decision) {
             const decisionFlowNode = flowNodes.find(n => n.id === sourceFlowNode.decisionNodeId);
             flowEdges.push({ id: `e-${sourceFlowNode.id}-${decisionFlowNode.id}`, source: sourceFlowNode.id, target: decisionFlowNode.id, type: 'custom', data: { label: '' }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }});
@@ -512,8 +544,19 @@ const generateFlowFromYaml = (yamlData, files) => {
                 const isNumeric = /^-?\d+(\.\d+)?$/.test(spacedKey);
                 const label = isNumeric ? spacedKey : capitalizeFirstLetter(spacedKey);
 
-                const target = value === 'end' ? getExitNode(key) : flowNodeMap.get(value);
-                flowEdges.push({ id: `e-${decisionFlowNode.id}-${target.id}-${key}`, source: decisionFlowNode.id, target: target.id, type: 'custom', data: { label }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }});
+                let target;
+                if (value === 'end') {
+                    target = getExitNode(key);
+                } else if (String(value).startsWith('goto__')) {
+                    const alarmCode = String(value).substring(6);
+                    target = getGoToNode(alarmCode);
+                } else {
+                    target = flowNodeMap.get(value);
+                }
+                
+                if (target) {
+                    flowEdges.push({ id: `e-${decisionFlowNode.id}-${target.id}-${key}`, source: decisionFlowNode.id, target: target.id, type: 'custom', data: { label }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' }});
+                }
             });
         }
     }
@@ -870,7 +913,7 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
         setEdges((eds) =>
             eds.map((e) => ({
                 ...e,
-                data: { ...e.data, isDimmed: !pathEdgeIds.has(e.id) },
+                data: { ...e.data, isDimmed: !pathNodeIds.has(e.id) },
             }))
         );
     }, [nodes, edges, setNodes, setEdges]);
@@ -933,12 +976,24 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
                 } else {
                     const targetNodeId = outgoingEdges[0].target;
                     const targetNode = nodesMap.get(targetNodeId);
-                    if (!targetNode || (targetNode.type !== 'exit' && targetNode.type !== 'decision')) {
+                    if (!targetNode || (targetNode.type !== 'exit' && targetNode.type !== 'decision' && targetNode.type !== 'goto')) {
                         hasWarning = true;
-                        warningMessage = 'Condition node must be connected to a Decision or an Exit node.';
+                        warningMessage = 'Condition node must be connected to a Decision, Exit or Go To node.';
                     }
                 }
                 
+                if ((node.data.hasWarning || false) !== hasWarning || node.data.warningMessage !== warningMessage) {
+                    nodesChanged = true;
+                    return { ...node, data: { ...node.data, hasWarning, warningMessage } };
+                }
+            } else if (node.type === 'goto') {
+                let hasWarning = false;
+                let warningMessage = '';
+                if (!node.data.alarmCode || node.data.alarmCode.length !== 4) {
+                    hasWarning = true;
+                    warningMessage = 'Go To node must have a 4-digit alarm code.';
+                }
+
                 if ((node.data.hasWarning || false) !== hasWarning || node.data.warningMessage !== warningMessage) {
                     nodesChanged = true;
                     return { ...node, data: { ...node.data, hasWarning, warningMessage } };
@@ -1024,6 +1079,8 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
                 newNode.style = { width: 112, height: 112 };
             } else if (type === 'exit') {
                 newNode.style = { width: 96, height: 96 };
+            } else if (type === 'goto') {
+                newNode.style = { width: 120, height: 40 };
             }
 
             setNodes((nds) => nds.concat(newNode));
@@ -1095,6 +1152,7 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
                         <li onClick={() => onAddNode('condition')}>Condition</li>
                         <li onClick={() => onAddNode('decision')}>Decision</li>
                         <li onClick={() => onAddNode('exit')}>Exit</li>
+                        <li onClick={() => onAddNode('goto')}>Go To</li>
                     </ul>
                     <div className="context-menu-separator" />
                     <ul>
