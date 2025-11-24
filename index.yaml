@@ -1,296 +1,308 @@
 Config:
-    base_path: Flujos/
-    s3_path: s3://pegsa-chatbot/Flujos/
+  base_path: Flujos/
+  s3_path: s3://pegsa-chatbot/Flujos/
 Alarms:
-    "1019":
-        name: Alarma 1019
-        file_name: alarma1019.yml
-        alarm_type: warning
-        extra_metadata:
-            - m1_pag_40_3.png
-            - pi_d.png
-            - ta_2110_0008_diane_xt4.pdf
-            - tabla_de_presiones_tk_en_vacio.png
-            - ubicacion_tk_espasion_y_manometro.pdf
-            - w_8080_a0_motor_circuito_de_agua_de_refrigeracion.pdf
-    "1060":
-        name: Alarma 1060
-        file_name: alarma1060.yml
-        alarm_type: critical
-        extra_metadata:
-            - 2110_0008_es.pdf
-            - a1_pag_44.png
-            - a1_pag_45.png
-            - m1_pag_14.png
-            - m1_pag_22.png
-            - m1_pag_29.png
-            - m1_pag_40.png
-            - sb_113_en.pdf
-            - trending_failure_example.pdf
-            - w_8054_m0_es.pdf
-
-    "1061":
-        name: Alarma 1061
-        file_name: alarma1061.yml
-        alarm_type: warning
-        extra_metadata:
-            - 1000_0050_es.pdf
-            - 1502_0067_es.pdf
-            - 1502_0068_es.pdf
-            - 1502_0073_es.pdf
-            - 1502_0075_firmware.pdf
-            - 1502_0085_es.pdf
-            - ignition_box_camparission.pdf
-            - ta_2110_0008_diane_xt4.pdf
-            - w_0303_m0_es_ignition.pdf
-            - w_8032_m0_es.pdf
-
-    "3542":
-        name: Alarma 3542
-        file_name: alarma3542.yml
-        alarm_type: warning
-        extra_metadata:
-            - conexion_termocuplas.pdf
-            - 1502-0071.pdf
-    "2412":
-        name: Alarma 2412
-        file_name: alarma2412.yml
-        alarm_type: warning
-        extra_metadata:
-            - m1_pag_43.png
-            - pt100_table.pdf
-            - temperatura_de_aire_de_admision.pdf
-
-    "1023":
-        name: Alarma 1023
-        file_name: alarma1023.yml
-        alarm_type: critical
-        extra_metadata:
-            - +M1_page_25.png
-            - +M1_page_26.png
-            - 1000-0050_es.pdf
-            - 1000-0051_es.pdf
-            - 1503-0043_es.pdf
-            - DIANE XT4- ENG- REGULADOR LEANOX.png
-            - export_logs_diane_xt4_pg206_anexo19.2.2.pdf
-            - LEANOX_START_STOP.pdf
-            - posicion_correcta_throttle_var.png
-            - UBICACION_MANOMETRO_PRESION_TREN_DE_GAS.png
-
-    "1056":
-        name: Alarma 1056
-        file_name: alarma1056.yml
-        alarm_type: warning
-        extra_metadata:
-            - 1_estado_de_los_leds.pdf
-            - 3_m1_page_50_safety_loop_input.png
-
-    "1050":
-        name: Alarma 1050
-        file_name: alarma1050.yml
-        alarm_type: critical
-        extra_metadata:
-            - 1_pi_d_process_diagram.png
-            - instruccion_causa_falla_alarma_1050.pdf
-            - pi_d_expansion_vessel_pressure.pdf
-            - ta_2110_0008_diane_xt4.pdf
-            - w_8080_a0_es_cooling_water_system_mixture_circulating_water.pdf
-
-    "1051":
-        name: Alarma 1051
-        file_name: alarma1051.yml
-        alarm_type: warning
-        extra_metadata:
-            - 1530_0185_differential_pressure.pdf
-            - 2110_0008_es.pdf
-            - iw_0101_m0_es.pdf
-            - puntos_de_medicion_de_presion_del_carter.png
-            - solenoide_valve_refresh_oil_2.jpg
-            - solenoide_valve_status.png
-
-    "1080":
-        name: Alarma 1080
-        file_name: alarma1080.yml
-        alarm_type: critical
-        extra_metadata:
-            - 0309m0_es.pdf
-            - 1530_0196_es.pdf
-            - filtros_de_aire_saturados_1.jpg
-            - gas_valve_open_1.jpg
-            - leanox_alarma_1080.png
-            - solenoide_valve_leds_1.pdf
-            - ta_1502_0067_1.pdf
-            - ta_1502_0068_1.pdf
-            - ta_1502_0073_1.pdf
-            - ta_1502_0085_1.pdf
-            - ta_2110_0008_diane_xt4.pdf
-    "1022":
-        name: Alarma 1022
-        file_name: alarma1022.yml
-        alarm_type: critical
-        extra_metadata:
-            - ejemplo_de_rutura_de_couping_element.jpg
-            - m1_pag_56.png
-            - m1_pag_77.png
-            - ta_1502_0038.pdf
-            - ta_1502_0068_encendido_moris.pdf
-            - ta_1502_0069.pdf
-            - ta_1502_0073_sistemas_de_encendido_mic940_mic950.pdf
-            - ta_1502_0085.pdf
-            - ta_2108_0031_operacion_en_isla_generalidades.pdf
-            - ta_2110_0008_diane_xt4.pdf
-
-    "1026":
-        name: Alarma 1026
-        file_name: alarma1026.yml
-        alarm_type: warning
-        extra_metadata:
-            - gas_train.png
-            - movimiento_libre_actuador_serie_4.jpg
-            - solenoid_valve_v1_and_v2.jpeg
-            - ta_2110_0008_diane_xt4.pdf
-            - ubicacion_clapeta_serie_4.jpg
-
-    "3416":
-        name: Alarma 3416
-        file_name: alarma3416.yml
-        alarm_type: warning
-        extra_metadata:
-            - 2110_0008_es.pdf
-            - iw_0101_m0_es.pdf
-            - w_8038_m4.pdf
-            - w_8038_m6efj.pdf
-            - w_8038_m6h.pdf
-
-    "3331":
-        name: Alarma 3331
-        file_name: alarma3331.yml
-        alarm_type: warning
-        extra_metadata:
-            - 1502_0069_power_encendido_moris_mpm.pdf
-            - 1502_0071_es.pdf
-            - 1531_0012_es.pdf
-            - b3271_safi_falla_comunicacion_can_cilindro_xx.png
-            - m1_pag_11.png
-            - ta_1502_0068_es.pdf
-            - ta_2110_0008_diane_xt4.pdf
-
-    "1109":
-        name: Alarma 1109
-        file_name: alarma1109.yml
-        alarm_type: warning
-        extra_metadata:
-            - 1000_0530_es.pdf
-            - 1530_0182_es.pdf
-            - 2110_0008_es.pdf
-            - m1_pag_61.png
-            - ta_2108_0025_engine_type_4.pdf
-            - ta_2108_0030_engine_type_3.pdf
-            - trending_failure_example.pdf
-
-    "1064":
-        name: Alarma 1064
-        file_name: alarma1064.yml
-        alarm_type: critical
-        extra_metadata:
-            - 1502_0065_es.pdf
-            - 2108_0031_es.pdf
-            - 2110_0008_es.pdf
-            - couplimg_element_damage.pdf
-            - m1_pag_26.png
-            - m1_pag_69_pro_act_ii.png
-            - throttle_valve_assemble.pdf
-            - w_0303_m0_encendido.pdf
-
-    "1036":
-        name: Alarma 1036
-        file_name: alarma1036.yml
-        alarm_type: warning
-        extra_metadata:
-            - a1_pag_47.png
-            - a1_pag_48.png
-            - a1_pag_49.png
-            - diag_exmaple.pdf
-            - g1_pag_10.png
-            - ta_2110_0008_diane_xt4.pdf
-
-    "1094":
-        name: Alarma 1094
-        file_name: alarma1094.yml
-        alarm_type: critical
-        extra_metadata:
-            - 0309m0_es.pdf
-            - 1503_0044_es.pdf
-            - 1530_0190_es.pdf
-            - 1530_0196_es.pdf
-            - 1530_0197_es.pdf
-            - 2108_0025_es.pdf
-            - 2108_0026_es.pdf
-            - 2108_0029_es.pdf
-            - 2108_0030_es.pdf
-            - 2108_0031_es.pdf
-            - 2110_0008_es.pdf
-            - alto_niveles_de_aceite_despues_de_filtro_de_aire.jpg
-            - apertura_manual_de_clapeta.pdf
-            - instructivo_prueba_tension_turbobypass.pdf
-            - m1_pag_56.png
-            - presion_de_gas_ejemplo.jpg
-            - speed_control_engine_type_2_3_4_6.pdf
-            - ta_1530_0185_es_blow_by_differencial_pressure.pdf
-            - valvula_bypass.png
-
-    "1028":
-        name: Alarma 1028
-        file_name: alarma1028.yml
-        alarm_type: warning
-        extra_metadata:
-            - 2110_0008_es.pdf
-            - presion_de_gas_de_entrada.jpg
-            - ubicacion_swich_de_presion_minima.jpg
-
-    "3322":
-        name: Alarma 3322
-        file_name: alarma3322.yml
-        alarm_type: warning
-        extra_metadata:
-            - exportacion_de_parametros_diane_xt4.pdf
-            - iw_0508m4_es.pdf
-            - iw_0511m6_es.pdf
-            - iw_0513m6_es.pdf
-            - ta_1530_0185_es.pdf
-    "1027":
-        name: Alarma 1027
-        file_name: alarma1027.yml
-        alarm_type: warning
-        extra_metadata:
-            - 2110_0008_es.pdf
-            - dispositivo_de_control_de_fuga_de_gas_di.png
-            - leds_vps.jpg
-
-    "2293":
-        name: Alarma 2293
-        file_name: alarma2293.yml
-        alarm_type: warning
-        extra_metadata:
-            - 2110_0008_es.pdf
-
-    "1031":
-        name: Alarma 1031
-        file_name: alarma1031.yml
-        alarm_type: warning
-        extra_metadata:
-            - a1_pag_104.png
-            - exportacion_de_parametros_diane_xt4.pdf
-            - m1_pag_49.png
-
-    "1130":
-        name: Alarma 1130
-        file_name: alarma1130.yml
-        alarm_type: warning
-        extra_metadata:
-            - 8080a0_es.pdf
-            - entrada_di_presion_de_agua_circuito_lt.png
-            - exportacion_de_parametros_diane_xt4.pdf
-            - manometro_tanque_de_expansion.png
-            - presion_de_agua_circuito_lt.png
-            - senal_minima_presion_de_agua.png
+  "1019":
+    name: Alarma 1019
+    file_name: alarma1019.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - m1_pag_40_3.png
+      - pi_d.png
+      - ta_2110_0008_diane_xt4.pdf
+      - tabla_de_presiones_tk_en_vacio.png
+      - ubicacion_tk_espasion_y_manometro.pdf
+      - w_8080_a0_motor_circuito_de_agua_de_refrigeracion.pdf
+  "1022":
+    name: Alarma 1022
+    file_name: alarma1022.yml
+    alarm_type: critical
+    status: online
+    extra_metadata:
+      - ejemplo_de_rutura_de_couping_element.jpg
+      - m1_pag_56.png
+      - m1_pag_77.png
+      - ta_1502_0038.pdf
+      - ta_1502_0068_encendido_moris.pdf
+      - ta_1502_0069.pdf
+      - ta_1502_0073_sistemas_de_encendido_mic940_mic950.pdf
+      - ta_1502_0085.pdf
+      - ta_2108_0031_operacion_en_isla_generalidades.pdf
+      - ta_2110_0008_diane_xt4.pdf
+  "1023":
+    name: Alarma 1023
+    file_name: alarma1023.yml
+    alarm_type: critical
+    status: online
+    extra_metadata:
+      - +M1_page_25.png
+      - +M1_page_26.png
+      - 1000-0050_es.pdf
+      - 1000-0051_es.pdf
+      - 1503-0043_es.pdf
+      - DIANE XT4- ENG- REGULADOR LEANOX.png
+      - export_logs_diane_xt4_pg206_anexo19.2.2.pdf
+      - LEANOX_START_STOP.pdf
+      - posicion_correcta_throttle_var.png
+      - UBICACION_MANOMETRO_PRESION_TREN_DE_GAS.png
+  "1026":
+    name: Alarma 1026
+    file_name: alarma1026.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - gas_train.png
+      - movimiento_libre_actuador_serie_4.jpg
+      - solenoid_valve_v1_and_v2.jpeg
+      - ta_2110_0008_diane_xt4.pdf
+      - ubicacion_clapeta_serie_4.jpg
+  "1027":
+    name: Alarma 1027
+    file_name: alarma1027.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - 2110_0008_es.pdf
+      - dispositivo_de_control_de_fuga_de_gas_di.png
+      - leds_vps.jpg
+  "1028":
+    name: Alarma 1028
+    file_name: alarma1028.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - 2110_0008_es.pdf
+      - presion_de_gas_de_entrada.jpg
+      - ubicacion_swich_de_presion_minima.jpg
+  "1031":
+    name: Alarma 1031
+    file_name: alarma1031.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - a1_pag_104.png
+      - exportacion_de_parametros_diane_xt4.pdf
+      - m1_pag_49.png
+  "1036":
+    name: Alarma 1036
+    file_name: alarma1036.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - a1_pag_47.png
+      - a1_pag_48.png
+      - a1_pag_49.png
+      - diag_exmaple.pdf
+      - g1_pag_10.png
+      - ta_2110_0008_diane_xt4.pdf
+  "1050":
+    name: Alarma 1050
+    file_name: alarma1050.yml
+    alarm_type: critical
+    status: online
+    extra_metadata:
+      - 1_pi_d_process_diagram.png
+      - instruccion_causa_falla_alarma_1050.pdf
+      - pi_d_expansion_vessel_pressure.pdf
+      - ta_2110_0008_diane_xt4.pdf
+      - w_8080_a0_es_cooling_water_system_mixture_circulating_water.pdf
+  "1051":
+    name: Alarma 1051
+    file_name: alarma1051.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - 1530_0185_differential_pressure.pdf
+      - 2110_0008_es.pdf
+      - iw_0101_m0_es.pdf
+      - puntos_de_medicion_de_presion_del_carter.png
+      - solenoide_valve_refresh_oil_2.jpg
+      - solenoide_valve_status.png
+  "1056":
+    name: Alarma 1056
+    file_name: alarma1056.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - 1_estado_de_los_leds.pdf
+      - 3_m1_page_50_safety_loop_input.png
+  "1060":
+    name: Alarma 1060
+    file_name: alarma1060.yml
+    alarm_type: critical
+    status: online
+    extra_metadata:
+      - 2110_0008_es.pdf
+      - a1_pag_44.png
+      - a1_pag_45.png
+      - m1_pag_14.png
+      - m1_pag_22.png
+      - m1_pag_29.png
+      - m1_pag_40.png
+      - sb_113_en.pdf
+      - trending_failure_example.pdf
+      - w_8054_m0_es.pdf
+  "1061":
+    name: Alarma 1061
+    file_name: alarma1061.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - 1000_0050_es.pdf
+      - 1502_0067_es.pdf
+      - 1502_0068_es.pdf
+      - 1502_0073_es.pdf
+      - 1502_0075_firmware.pdf
+      - 1502_0085_es.pdf
+      - ignition_box_camparission.pdf
+      - ta_2110_0008_diane_xt4.pdf
+      - w_0303_m0_es_ignition.pdf
+      - w_8032_m0_es.pdf
+  "1064":
+    name: Alarma 1064
+    file_name: alarma1064.yml
+    alarm_type: critical
+    status: online
+    extra_metadata:
+      - 1502_0065_es.pdf
+      - 2108_0031_es.pdf
+      - 2110_0008_es.pdf
+      - couplimg_element_damage.pdf
+      - m1_pag_26.png
+      - m1_pag_69_pro_act_ii.png
+      - throttle_valve_assemble.pdf
+      - w_0303_m0_encendido.pdf
+  "1080":
+    name: Alarma 1080
+    file_name: alarma1080.yml
+    alarm_type: critical
+    status: online
+    extra_metadata:
+      - 0309m0_es.pdf
+      - 1530_0196_es.pdf
+      - filtros_de_aire_saturados_1.jpg
+      - gas_valve_open_1.jpg
+      - leanox_alarma_1080.png
+      - solenoide_valve_leds_1.pdf
+      - ta_1502_0067_1.pdf
+      - ta_1502_0068_1.pdf
+      - ta_1502_0073_1.pdf
+      - ta_1502_0085_1.pdf
+      - ta_2110_0008_diane_xt4.pdf
+  "1094":
+    name: Alarma 1094
+    file_name: alarma1094.yml
+    alarm_type: critical
+    status: online
+    extra_metadata:
+      - 0309m0_es.pdf
+      - 1503_0044_es.pdf
+      - 1530_0190_es.pdf
+      - 1530_0196_es.pdf
+      - 1530_0197_es.pdf
+      - 2108_0025_es.pdf
+      - 2108_0026_es.pdf
+      - 2108_0029_es.pdf
+      - 2108_0030_es.pdf
+      - 2108_0031_es.pdf
+      - 2110_0008_es.pdf
+      - alto_niveles_de_aceite_despues_de_filtro_de_aire.jpg
+      - apertura_manual_de_clapeta.pdf
+      - instructivo_prueba_tension_turbobypass.pdf
+      - m1_pag_56.png
+      - presion_de_gas_ejemplo.jpg
+      - speed_control_engine_type_2_3_4_6.pdf
+      - ta_1530_0185_es_blow_by_differencial_pressure.pdf
+      - valvula_bypass.png
+  "1109":
+    name: Alarma 1109
+    file_name: alarma1109.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - 1000_0530_es.pdf
+      - 1530_0182_es.pdf
+      - 2110_0008_es.pdf
+      - m1_pag_61.png
+      - ta_2108_0025_engine_type_4.pdf
+      - ta_2108_0030_engine_type_3.pdf
+      - trending_failure_example.pdf
+  "1130":
+    name: Alarma 1130
+    file_name: alarma1130.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - 8080a0_es.pdf
+      - entrada_di_presion_de_agua_circuito_lt.png
+      - exportacion_de_parametros_diane_xt4.pdf
+      - manometro_tanque_de_expansion.png
+      - presion_de_agua_circuito_lt.png
+      - senal_minima_presion_de_agua.png
+  "2293":
+    name: Alarma 2293
+    file_name: alarma2293.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - 2110_0008_es.pdf
+  "2412":
+    name: Alarma 2412
+    file_name: alarma2412.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - m1_pag_43.png
+      - pt100_table.pdf
+      - temperatura_de_aire_de_admision.pdf
+  "3322":
+    name: Alarma 3322
+    file_name: alarma3322.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - exportacion_de_parametros_diane_xt4.pdf
+      - iw_0508m4_es.pdf
+      - iw_0511m6_es.pdf
+      - iw_0513m6_es.pdf
+      - ta_1530_0185_es.pdf
+  "3331":
+    name: Alarma 3331
+    file_name: alarma3331.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - 1502_0069_power_encendido_moris_mpm.pdf
+      - 1502_0071_es.pdf
+      - 1531_0012_es.pdf
+      - b3271_safi_falla_comunicacion_can_cilindro_xx.png
+      - m1_pag_11.png
+      - ta_1502_0068_es.pdf
+      - ta_2110_0008_diane_xt4.pdf
+  "3416":
+    name: Alarma 3416
+    file_name: alarma3416.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - 2110_0008_es.pdf
+      - iw_0101_m0_es.pdf
+      - w_8038_m4.pdf
+      - w_8038_m6efj.pdf
+      - w_8038_m6h.pdf
+  "3542":
+    name: Alarma 3542
+    file_name: alarma3542.yml
+    alarm_type: warning
+    status: online
+    extra_metadata:
+      - conexion_termocuplas.pdf
+      - 1502-0071.pdf
+  "4444":
+    name: Alarma 4444
+    file_name: alarma4444.yml
+    alarm_type: critical
+    extra_metadata:
+      - predio_av_56_80b_97.pdf
+    status: pending

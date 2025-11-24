@@ -337,42 +337,44 @@ function App() {
             delete newIndexYamlData.Alarms['Metadata for Alarms file (for reference)'];
         }
 
-        newIndexYamlData.Alarms[alarmCode] = metadata[alarmCode];
+        const alarmDataFromFlow = metadata[alarmCode];
+
+        if (newIndexYamlData.Alarms[alarmCode]) {
+            // Existing alarm: preserve status.
+            const existingAlarm = newIndexYamlData.Alarms[alarmCode];
+            newIndexYamlData.Alarms[alarmCode] = {
+                ...alarmDataFromFlow,
+                status: existingAlarm.status
+            };
+        } else {
+            // New alarm: set status to 'pending'
+            alarmDataFromFlow.status = 'pending';
+            newIndexYamlData.Alarms[alarmCode] = alarmDataFromFlow;
+        }
 
         const newIndexYamlString = yaml.dump(newIndexYamlData, { noRefs: true, quotingType: '"' });
         
-        if (window.showSaveFilePicker) {
-            try {
-                const handle = await window.showSaveFilePicker({
-                    suggestedName: 'index.yaml',
-                    types: [{
-                        description: 'YAML files',
-                        accept: { 'text/yaml': ['.yaml', '.yml'] },
-                    }],
-                });
-                const writable = await handle.createWritable();
-                await writable.write(newIndexYamlString);
-                await writable.close();
-                alert('index.yaml guardado exitosamente.');
-            } catch (err) {
-                if (err.name !== 'AbortError') {
-                    console.error('Error saving file:', err);
-                    alert('No se pudo guardar el archivo.');
-                }
-            }
-        } else {
-            const blob = new Blob([newIndexYamlString], { type: 'text/yaml' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'index.yaml';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
+        try {
+            // NOTE: This requires a server-side endpoint to handle the file write.
+            // For development, this can be a Vite middleware. For production, a dedicated backend.
+            // Example endpoint: POST /api/update-index-yaml
+            const response = await fetch('/api/update-index-yaml', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/yaml' },
+                body: newIndexYamlString
+            });
 
-        setIndexYamlData(newIndexYamlData);
+            if (response.ok) {
+                alert('index.yaml updated successfully on the server.');
+                setIndexYamlData(newIndexYamlData);
+            } else {
+                const errorText = await response.text();
+                throw new Error(`Server responded with ${response.status}: ${errorText}`);
+            }
+        } catch (apiError) {
+            console.error('Failed to update index.yaml:', apiError);
+            alert(`An error occurred while trying to save index.yaml to the server. Check the console for details.\n\nNOTE: Saving requires a backend endpoint. The file was not saved.`);
+        }
 
     } catch (e) {
         console.error("Error pushing to index.yaml", e);
