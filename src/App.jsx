@@ -286,7 +286,7 @@ function App() {
     const a = document.createElement('a');
     a.href = url;
 
-    a.download = `${alarmCode}_flow.zip`;
+    a.download = `${alarmCode}.zip`;
 
     document.body.appendChild(a);
     a.click();
@@ -459,6 +459,22 @@ function App() {
     setIsHelpOpen(prev => !prev);
   };
 
+  const actionButtonStyle = {
+    background: 'var(--primary)',
+    color: 'var(--primary-foreground)',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0 16px',
+    borderRadius: 'var(--radius)',
+    gap: '8px',
+    fontWeight: 500,
+    height: '40px',
+    fontSize: '14px',
+  };
+
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
       <div style={{ flexGrow: 1, height: '100%' }}>
@@ -489,155 +505,73 @@ function App() {
           onChange={handleFileUpload}
           style={{ display: 'none' }}
       />
-       <button
-        title="Ayuda"
-        onClick={handleToggleHelp}
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12}px`,
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: 'var(--primary)',
-          color: 'var(--primary-foreground)',
-          border: 'none',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
-          transition: 'right 0.3s ease-in-out'
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-      </button>
-
-      <button
-        title="Test Chatbot"
-        onClick={handleTestChatbot}
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12 + 56 + 12 + 56 + 12}px`,
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: 'var(--primary)',
-          color: 'var(--primary-foreground)',
-          border: 'none',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
-          transition: 'right 0.3s ease-in-out'
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-      </button>
-
-       <button
-        title="Upload Flow (.chatflow)"
-        onClick={() => document.getElementById('chatflow-upload').click()}
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12 + 56 + 12}px`,
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: 'var(--primary)',
-          color: 'var(--primary-foreground)',
-          border: 'none',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
-          transition: 'right 0.3s ease-in-out'
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
-      </button>
       
-      <button
-        title="Push to Index"
-        onClick={handlePushToIndex}
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12 + 56 + 12}px` : `${24 + 56 + 12 + 56 + 12}px`,
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: 'var(--primary)',
-          color: 'var(--primary-foreground)',
-          border: 'none',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
-          transition: 'right 0.3s ease-in-out'
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><path d="M12 18v-6" /><path d="m9 15 3-3 3 3" /></svg>
-      </button>
-
-      <button
-        title="Export ZIP"
-        onClick={handleExportZip}
-        style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: isSidebarVisible ? `${sidebarWidth + 24 + 56 + 12}px` : `${24 + 56 + 12}px`,
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: 'var(--primary)',
-          color: 'var(--primary-foreground)',
-          border: 'none',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
-          transition: 'right 0.3s ease-in-out'
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-      </button>
-
-      <button
-        title="Download Flow (.chatflow)"
-        onClick={handleDownloadChatflow}
-        style={{
+      <div style={{
           position: 'fixed',
           bottom: '24px',
           right: isSidebarVisible ? `${sidebarWidth + 24}px` : '24px',
-          width: '56px',
-          height: '56px',
-          borderRadius: '50%',
-          background: 'var(--primary)',
-          color: 'var(--primary-foreground)',
-          border: 'none',
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          zIndex: 1001,
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1001,
+          gap: '12px',
           transition: 'right 0.3s ease-in-out'
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-      </button>
+      }}>
+          <div style={{ display: 'flex', gap: '8px', background: 'var(--card)', padding: '8px', borderRadius: 'var(--radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
+              <button
+                  title="Test Chatbot"
+                  onClick={handleTestChatbot}
+                  style={{...actionButtonStyle, background: 'var(--secondary)', color: 'var(--secondary-foreground)', border: '1px solid var(--border)'}}
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                  <span>Test</span>
+              </button>
+              <button
+                  title="Ayuda"
+                  onClick={handleToggleHelp}
+                  style={{...actionButtonStyle, background: 'var(--secondary)', color: 'var(--secondary-foreground)', border: '1px solid var(--border)'}}
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                  <span>Help</span>
+              </button>
+          </div>
+
+          <div style={{ width: '1px', height: '24px', background: 'var(--border)' }}></div>
+
+          <div style={{ display: 'flex', gap: '8px', background: 'var(--card)', padding: '8px', borderRadius: 'var(--radius)', boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)' }}>
+              <button
+                  title="Upload Flow (.chatflow)"
+                  onClick={() => document.getElementById('chatflow-upload').click()}
+                  style={actionButtonStyle}
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                  <span>Upload</span>
+              </button>
+              <button
+                  title="Download Flow (.chatflow)"
+                  onClick={handleDownloadChatflow}
+                  style={actionButtonStyle}
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                  <span>Download</span>
+              </button>
+              <button
+                  title="Export ZIP for Production"
+                  onClick={handleExportZip}
+                  style={actionButtonStyle}
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                  <span>Export</span>
+              </button>
+              <button
+                  title="Push to Index"
+                  onClick={handlePushToIndex}
+                  style={actionButtonStyle}
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><path d="M12 18v-6" /><path d="m9 15 3-3 3 3" /></svg>
+                  <span>Push</span>
+              </button>
+          </div>
+      </div>
 
       {!isSidebarVisible && (
         <button
