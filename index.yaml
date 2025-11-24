@@ -299,10 +299,3 @@ Alarms:
     extra_metadata:
       - conexion_termocuplas.pdf
       - 1502-0071.pdf
-  "4444":
-    name: Alarma 4444
-    file_name: alarma4444.yml
-    alarm_type: critical
-    extra_metadata:
-      - predio_av_56_80b_97.pdf
-    status: pending
