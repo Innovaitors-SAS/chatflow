@@ -109,7 +109,7 @@ function generateYaml(nodes, edges) {
     const graphStartLine = yamlLines.length + 1;
     push(`graph:`);
     push(`  id: "graph_alarm_${alarmCode}"`);
-    push(`  description: "Proceso alarma ${alarmCode}."`);
+    push(`  description: "${alarmCode}"`);
     push(``);
     if (startNode) lineMap.set(startNode.id, { start: graphStartLine, end: yamlLines.length });
 
@@ -431,7 +431,7 @@ const generateFlowFromYaml = (yamlData, files) => {
             alarmType = Alarms[alarmKey]?.alarm_type;
         }
     }
-    if (!alarmCode) alarmCode = graph.description;
+    if (!alarmCode) alarmCode = graph.description?.replace('Proceso alarma ', '').replace('.', '') || graph.id?.replace('graph_alarm_', '') || 'XXXX';
     if (!alarmType) alarmType = graph.alarm_type || 'warning';
 
     const startNode = {
@@ -1108,6 +1108,7 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
                         selectionOnDrag
                         selectionMode={SelectionMode.Partial}
                         panOnDrag={[1]}
+                        proOptions={{ hideAttribution: true }}
                     >
                         <Controls />
                         <Background color="var(--border)" gap={16} />

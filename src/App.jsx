@@ -6,7 +6,6 @@ import FlowDiagram from './components/FlowDiagram';
 import Sidebar from './components/Sidebar';
 import Chatbot from './components/chatbot/Chatbot';
 import HelpTutorial from './components/HelpTutorial';
-import Dashboard from './components/dashboard/Dashboard';
 
 // Helper functions for persistence
 const debounce = (func, wait) => {
@@ -95,13 +94,6 @@ function App() {
   const flowDiagramRef = useRef(null);
   const [flowTitle, setFlowTitle] = useState('Flow Builder');
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [indexYamlData, setIndexYamlData] = useState(null);
-  const [rawIndexYaml, setRawIndexYaml] = useState(null);
-  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
-  const [isPushing, setIsPushing] = useState(false);
-  const [pushStatus, setPushStatus] = useState(null); // 'success' | 'error' | null
-  const [showPushConfirm, setShowPushConfirm] = useState(false);
-  const [pushConfirmData, setPushConfirmData] = useState(null);
 
   const saveData = useCallback(() => {
       if (!flowDiagramRef.current) return;
@@ -166,24 +158,6 @@ function App() {
               localStorage.removeItem('chatflow-data');
           }
       }
-      
-      const fetchIndexYaml = async () => {
-        try {
-            const response = await fetch('/index.yaml', { cache: 'no-store' });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const text = await response.text();
-            setRawIndexYaml(text);
-            const data = yaml.load(text);
-            setIndexYamlData(data);
-        } catch (e) {
-            console.error("Failed to load index.yaml.", e);
-            setIndexYamlData({ Config: {}, Alarms: {} });
-            setRawIndexYaml(`# Failed to load index.yaml. Error: ${e.message}`);
-        }
-      };
-      fetchIndexYaml();
   }, []);
 
   const totalHighlightedPath = useMemo(() => ({
@@ -195,17 +169,13 @@ function App() {
     setIsSidebarVisible(prev => !prev);
   };
 
-  const handleToggleDashboard = () => {
-    setIsDashboardOpen(prev => !prev);
-  };
-
   const onYamlChange = useCallback((newYaml, newLineMap, newSelectedNodeIds) => {
     setYamlString(newYaml);
     setLineMap(newLineMap);
     setSelectedNodeIds(newSelectedNodeIds);
   }, []);
 
-  const handleDownloadChatflow = async () => {
+  const handleExportZip = async () => {
     if (!flowDiagramRef.current) return;
 
     const { nodes, edges, viewport, yaml: currentYaml } = flowDiagramRef.current.getFlowData();
@@ -213,10 +183,14 @@ function App() {
 
     const zip = new JSZip();
 
-    // 1. Add flowchart.yml
-    zip.file('flowchart.yml', currentYaml);
+    const startNode = nodes.find(n => n.type === 'start');
+    let alarmCode = 'flow';
+    if (startNode?.data?.alarmCode) {
+        alarmCode = startNode.data.alarmCode;
+    }
 
-    // 2. Add graph_layout_metadata.json
+    zip.file(`alarma${alarmCode}.yml`, currentYaml);
+
     const nodesForLayout = nodes.map(n => {
         const nodeLayoutData = {
             id: n.id,
@@ -239,54 +213,6 @@ function App() {
     };
     zip.file('graph_layout_metadata.json', JSON.stringify(layoutData, null, 2));
 
-    // 3. Add files from nodes to extra_metadata/
-    const extraMetadata = zip.folder('extra_metadata');
-    for (const node of nodes) {
-        if (node.data?.action === 'Send File' && node.data?.file instanceof File) {
-            extraMetadata.file(node.data.file.name, node.data.file);
-        }
-    }
-
-    // 4. Add icon.svg
-    const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path><path d="m7 12-2-2 2-2"></path><path d="m12 12 2-2-2-2"></path></svg>`;
-    zip.file('icon.svg', iconSvg);
-
-
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    const url = URL.createObjectURL(zipBlob);
-    const a = document.createElement('a');
-    a.href = url;
-
-    const startNode = nodes.find(n => n.type === 'start');
-    let alarmCode = 'flow';
-    if (startNode?.data?.alarmCode) {
-        alarmCode = startNode.data.alarmCode;
-    }
-
-    a.download = `${alarmCode}_flow.chatflow`;
-
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleExportZip = async () => {
-    if (!flowDiagramRef.current) return;
-
-    const { nodes, yaml: currentYaml } = flowDiagramRef.current.getFlowData();
-    if (!currentYaml) return;
-
-    const zip = new JSZip();
-
-    const startNode = nodes.find(n => n.type === 'start');
-    let alarmCode = 'flow';
-    if (startNode?.data?.alarmCode) {
-        alarmCode = startNode.data.alarmCode;
-    }
-
-    zip.file(`alarma${alarmCode}.yml`, currentYaml);
-
     const extraMetadata = zip.folder('extra_metadata');
     for (const node of nodes) {
         if (node.data?.action === 'Send File' && node.data?.file instanceof File) {
@@ -307,106 +233,6 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  const handlePushToIndex = async () => {
-    if (!flowDiagramRef.current || !indexYamlData) {
-        alert("Index.yaml data not loaded yet. Please try again in a moment.");
-        return;
-    }
-
-    const { yaml: currentYaml } = flowDiagramRef.current.getFlowData();
-    if (!currentYaml) return;
-
-    const metadataMatch = currentYaml.match(/# ---\n(#(?:.|\n)*)/);
-    if (!metadataMatch) {
-        alert("Could not find metadata block in the generated YAML.");
-        return;
-    }
-    
-    try {
-        const metadataString = metadataMatch[1]
-            .split('\n')
-            .map(line => line.replace(/^#\s?/, ''))
-            .join('\n');
-
-        const metadata = yaml.load(metadataString);
-        const alarmCode = Object.keys(metadata)[0];
-
-        if (!alarmCode) {
-            alert("Could not extract alarm code from metadata.");
-            return;
-        }
-
-        setPushConfirmData({ metadata, alarmCode });
-        setShowPushConfirm(true);
-    } catch (e) {
-        console.error("Error preparing to push to index.yaml", e);
-        alert("An error occurred while preparing to update index.yaml. Check console for details.");
-    }
-  };
-
-  const executePushToIndex = async () => {
-    if (!pushConfirmData) return;
-    
-    setIsPushing(true);
-    setShowPushConfirm(false);
-    setPushStatus(null);
-    
-    const { metadata, alarmCode } = pushConfirmData;
-
-    try {
-        const newIndexYamlData = { ...indexYamlData };
-        if (!newIndexYamlData.Alarms) {
-            newIndexYamlData.Alarms = {};
-        }
-
-        if (newIndexYamlData.Alarms && newIndexYamlData.Alarms['Metadata for Alarms file (for reference)']) {
-            delete newIndexYamlData.Alarms['Metadata for Alarms file (for reference)'];
-        }
-
-        const alarmDataFromFlow = metadata[alarmCode];
-
-        if (newIndexYamlData.Alarms[alarmCode]) {
-            const existingAlarm = newIndexYamlData.Alarms[alarmCode];
-            newIndexYamlData.Alarms[alarmCode] = {
-                ...alarmDataFromFlow,
-                status: existingAlarm.status
-            };
-        } else {
-            alarmDataFromFlow.status = 'pending';
-            newIndexYamlData.Alarms[alarmCode] = alarmDataFromFlow;
-        }
-
-        const newIndexYamlString = yaml.dump(newIndexYamlData, { noRefs: true, quotingType: '"' });
-
-        const response = await fetch('/api/update-index-yaml', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/yaml' },
-            body: newIndexYamlString
-        });
-
-        if (response.ok) {
-            setIndexYamlData(newIndexYamlData);
-            setRawIndexYaml(newIndexYamlString);
-            setPushStatus('success');
-        } else {
-            const errorText = await response.text();
-            throw new Error(`Server responded with ${response.status}: ${errorText}`);
-        }
-    } catch (apiError) {
-        console.error('Failed to update index.yaml:', apiError);
-        setPushStatus('error');
-        alert(`An error occurred while trying to save index.yaml to the server. Check the console for details.\n\nNOTE: Saving requires a backend endpoint. The file was not saved.`);
-    } finally {
-        setIsPushing(false);
-        setPushConfirmData(null);
-        setTimeout(() => setPushStatus(null), 3000);
-    }
-  };
-  
-  const cancelPush = () => {
-      setShowPushConfirm(false);
-      setPushConfirmData(null);
-  };
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
@@ -416,12 +242,17 @@ function App() {
     try {
         const content = await zip.loadAsync(file);
 
-        const yamlFile = content.file('flowchart.yml');
-        const layoutFile = content.file('graph_layout_metadata.json');
+        let yamlFile = content.file('flowchart.yml');
+        let layoutFile = content.file('graph_layout_metadata.json');
 
         if (!yamlFile) {
-            alert('ChatFlow file must contain a "flowchart.yml" file.');
-            return;
+            const alarmFiles = content.file(/alarma.*\.yml/);
+            if (alarmFiles.length > 0) {
+                yamlFile = alarmFiles[0];
+            } else {
+                alert('File must contain either "flowchart.yml" or a file named like "alarmaXXXX.yml".');
+                return;
+            }
         }
 
         const yamlContent = await yamlFile.async('string');
@@ -463,8 +294,8 @@ function App() {
         });
 
     } catch (err) {
-        console.error("Error processing ChatFlow file:", err);
-        alert("Failed to process ChatFlow file. It may be corrupt or not a valid ChatFlow archive.");
+        console.error("Error processing file:", err);
+        alert("Failed to process file. It may be corrupt or not a valid archive.");
     } finally {
       e.target.value = ''; // Reset file input
     }
@@ -487,6 +318,10 @@ function App() {
     setIsHelpOpen(prev => !prev);
   };
 
+  const handleOpenFolder = () => {
+    window.open('https://innovaitors-my.sharepoint.com/:f:/g/personal/nicolas_lasso_innovaitors_ai/IgAcPeAhjf5URaEoRQNk1gUzAYGDGNVFUv9ArGoj-QlDygc?e=HzEfH1', '_blank');
+  };
+
   const actionButtonStyle = {
     background: 'var(--primary)',
     color: 'var(--primary-foreground)',
@@ -504,82 +339,10 @@ function App() {
     transition: 'background-color 0.2s, border-color 0.2s, color 0.2s',
   };
   
-  const pushButtonContent = useMemo(() => {
-    if (isPushing) {
-        return (
-            <>
-                <svg className="spinner" viewBox="0 0 50 50"><circle className="path" cx="25" cy="25" r="20" fill="none" strokeWidth="5"></circle></svg>
-                <span>Pushing...</span>
-            </>
-        );
-    }
-    if (pushStatus === 'success') {
-        return (
-            <>
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                <span>Success</span>
-            </>
-        );
-    }
-    if (pushStatus === 'error') {
-        return (
-            <>
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                <span>Error</span>
-            </>
-        );
-    }
-    return (
-        <>
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><path d="M12 18v-6" /><path d="m9 15 3-3 3 3" /></svg>
-            <span>Push</span>
-        </>
-    );
-  }, [isPushing, pushStatus]);
-
-  const pushButtonStyle = useMemo(() => {
-    let style = { ...actionButtonStyle };
-    if (isPushing) {
-        style.cursor = 'wait';
-    }
-    if (pushStatus === 'success') {
-        style.background = 'var(--tested)';
-        style.borderColor = 'var(--tested)';
-        style.color = 'var(--primary-foreground)';
-    }
-    if (pushStatus === 'error') {
-        style.background = 'var(--destructive)';
-        style.borderColor = 'var(--destructive)';
-        style.color = 'var(--destructive-foreground)';
-    }
-    return style;
-  }, [isPushing, pushStatus]);
 
 
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-      <div style={{
-          position: 'fixed',
-          top: '24px',
-          left: '24px',
-          zIndex: 1002,
-          display: 'flex',
-          gap: '8px',
-          background: 'var(--card)',
-          padding: '8px',
-          borderRadius: 'var(--radius)',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-      }}>
-          <button
-              title="Open Dashboard"
-              onClick={handleToggleDashboard}
-              style={{...actionButtonStyle, background: 'var(--secondary)', color: 'var(--secondary-foreground)', border: '1px solid var(--border)'}}
-          >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-              <span>Dashboard</span>
-          </button>
-      </div>
-
       <div style={{ flexGrow: 1, height: '100%' }}>
         <FlowDiagram
             ref={flowDiagramRef}
@@ -604,7 +367,7 @@ function App() {
       <input
           id="chatflow-upload"
           type="file"
-          accept=".chatflow"
+          accept=".chatflow,.zip"
           onChange={handleFileUpload}
           style={{ display: 'none' }}
       />
@@ -636,6 +399,14 @@ function App() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                   <span>Help</span>
               </button>
+              <button
+                  title="Archivos"
+                  onClick={handleOpenFolder}
+                  style={{...actionButtonStyle, background: 'var(--secondary)', color: 'var(--secondary-foreground)', border: '1px solid var(--border)'}}
+              >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  <span>Files</span>
+              </button>
           </div>
 
           <div style={{ width: '1px', height: '24px', background: 'var(--border)' }}></div>
@@ -650,28 +421,12 @@ function App() {
                   <span>Upload</span>
               </button>
               <button
-                  title="Download Flow (.chatflow)"
-                  onClick={handleDownloadChatflow}
-                  style={actionButtonStyle}
-              >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                  <span>Download</span>
-              </button>
-              <button
                   title="Export ZIP for Production"
                   onClick={handleExportZip}
                   style={actionButtonStyle}
               >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                   <span>Export</span>
-              </button>
-              <button
-                  title="Push to Index"
-                  onClick={handlePushToIndex}
-                  style={pushButtonStyle}
-                  disabled={isPushing}
-              >
-                  {pushButtonContent}
               </button>
           </div>
       </div>
@@ -710,25 +465,6 @@ function App() {
           />
       )}
       {isHelpOpen && <HelpTutorial onClose={handleToggleHelp} />}
-      {isDashboardOpen && (
-          <Dashboard alarmsData={indexYamlData} onClose={handleToggleDashboard} />
-      )}
-      {showPushConfirm && (
-        <div className="confirmation-overlay">
-            <div className="confirmation-modal">
-                <h3>Confirm Push to Index</h3>
-                <p>
-                    You are about to update <strong>index.yaml</strong> with the metadata for alarm 
-                    <code> {pushConfirmData?.alarmCode}</code>. This may overwrite existing data.
-                </p>
-                <p>Are you sure you want to proceed?</p>
-                <div className="confirmation-actions">
-                    <button onClick={cancelPush} className="cancel">Cancel</button>
-                    <button onClick={executePushToIndex} className="confirm">Confirm & Push</button>
-                </div>
-            </div>
-        </div>
-      )}
     </div>
   );
 }
