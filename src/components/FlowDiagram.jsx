@@ -151,7 +151,7 @@ function generateYaml(nodes, edges) {
                     push(`      next: "end"`);
                 } else if (nextNode.type === 'goto') {
                     const nextAlarmCode = nextNode.data.alarmCode || 'XXXX';
-                    push(`      next: goto__${nextAlarmCode}`);
+                    push(`      next: goto_${nextAlarmCode}`);
                 } else if (nextNode.type === 'decision') {
                     decisionNodeIdForThisBlock = nextNode.id;
                     push(`      decision:`);
@@ -168,7 +168,7 @@ function generateYaml(nodes, edges) {
                             if (targetNode.type === 'exit') {
                                 targetValue = 'end';
                             } else if (targetNode.type === 'goto') {
-                                targetValue = `goto__${targetNode.data.alarmCode || 'XXXX'}`;
+                                targetValue = `goto_${targetNode.data.alarmCode || 'XXXX'}`;
                                 isGoto = true;
                             } else {
                                 targetValue = getYamlNodeId(edge.target);
@@ -400,6 +400,49 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     return { nodes: layoutedNodes, edges };
 };
 
+const estimateNodeSize = (text, condition) => {
+    const CHAR_WIDTH = 8;
+    const LINE_HEIGHT = 20;
+    const NODE_PADDING = 20;
+    const HEADER_HEIGHT = 30;
+    const CONDITION_BOX_PADDING = 24;
+    const GAP_BETWEEN_SECTIONS = 20;
+    const ACTION_HEIGHT = 30;
+    const MIN_WIDTH = 200;
+    const MIN_HEIGHT = 120;
+    const MAX_WIDTH = 360;
+
+    const allText = [text || '', condition || ''].join(' ');
+    const longestWord = allText.split(/\s+/).reduce((max, w) => Math.max(max, w.length), 0);
+    const minWidthForWords = longestWord * CHAR_WIDTH + NODE_PADDING + 20;
+
+    const avgLineLen = Math.max(20, Math.min(35, Math.max((text || '').length, (condition || '').length) / 3));
+    const desiredWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, minWidthForWords, avgLineLen * CHAR_WIDTH + NODE_PADDING));
+    const width = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Math.max(desiredWidth, minWidthForWords)));
+
+    const availableTextWidth = width - NODE_PADDING;
+    const charsPerLine = Math.max(1, Math.floor(availableTextWidth / CHAR_WIDTH));
+
+    const countWrappedLines = (str) => {
+        if (!str) return 0;
+        const lines = str.split(/\\n|\n/);
+        let total = 0;
+        for (const line of lines) {
+            total += Math.max(1, Math.ceil(line.length / charsPerLine));
+        }
+        return total;
+    };
+
+    let height = HEADER_HEIGHT;
+    height += countWrappedLines(text) * LINE_HEIGHT + GAP_BETWEEN_SECTIONS;
+    if (condition) {
+        height += countWrappedLines(condition) * LINE_HEIGHT + CONDITION_BOX_PADDING + GAP_BETWEEN_SECTIONS;
+    }
+    height += NODE_PADDING;
+
+    return { width, height: Math.max(MIN_HEIGHT, height) };
+};
+
 const generateFlowFromYaml = (yamlData, files) => {
     const { graph, Alarms } = yamlData || {};
     if (!graph?.nodes) {
@@ -466,7 +509,8 @@ const generateFlowFromYaml = (yamlData, files) => {
         }
         if (yamlNode.decision) nodeData.condition = yamlNode.decision.condition || '';
 
-        const flowNode = { id: flowNodeId, type: 'condition', data: nodeData, style: { width: 160, height: 96 } };
+        const nodeSize = estimateNodeSize(nodeData.text, nodeData.condition);
+        const flowNode = { id: flowNodeId, type: 'condition', data: nodeData, style: { width: nodeSize.width, height: nodeSize.height } };
         flowNodes.push(flowNode);
         flowNodeMap.set(yamlNode.id, flowNode);
 
@@ -487,8 +531,8 @@ const generateFlowFromYaml = (yamlData, files) => {
 
     const allTargets = new Set();
     yamlNodes.forEach(node => {
-        if (node.next && node.next !== 'end' && !String(node.next).startsWith('goto__')) allTargets.add(node.next);
-        if (node.decision) Object.entries(node.decision).forEach(([k, v]) => k !== 'condition' && k !== 'id' && v !== 'end' && !String(v).startsWith('goto__') && allTargets.add(v));
+        if (node.next && node.next !== 'end' && !String(node.next).startsWith('goto_')) allTargets.add(node.next);
+        if (node.decision) Object.entries(node.decision).forEach(([k, v]) => k !== 'condition' && k !== 'id' && v !== 'end' && !String(v).startsWith('goto_') && allTargets.add(v));
     });
     const entryYamlNode = yamlNodes.find(n => !allTargets.has(n.id)) || yamlNodes[0];
 
@@ -497,14 +541,13 @@ const generateFlowFromYaml = (yamlData, files) => {
         flowEdges.push({ id: `e-${startNode.id}-${entryFlowNode.id}`, source: startNode.id, target: entryFlowNode.id, type: 'custom', data: { label: '' }, markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--foreground)' } });
     }
 
-    const getExitNode = (key = 'default') => {
-        if (!exitNodeMap.has(key)) {
-            const exitNodeId = `exit-${key}`;
-            const exitNode = { id: exitNodeId, type: 'exit', data: { text: 'Workflow End' }, style: { width: 96, height: 96 } };
-            flowNodes.push(exitNode);
-            exitNodeMap.set(key, exitNode);
-        }
-        return exitNodeMap.get(key);
+    let exitCounter = 0;
+    const getExitNode = () => {
+        exitCounter++;
+        const exitNodeId = `exit-${exitCounter}`;
+        const exitNode = { id: exitNodeId, type: 'exit', data: { text: 'Workflow End' }, style: { width: 96, height: 96 } };
+        flowNodes.push(exitNode);
+        return exitNode;
     };
 
     const getGoToNode = (alarmCode) => {
@@ -526,8 +569,8 @@ const generateFlowFromYaml = (yamlData, files) => {
 
         if (yamlNode.next) {
             let target;
-            if (String(yamlNode.next).startsWith('goto__')) {
-                const alarmCode = String(yamlNode.next).substring(6);
+            if (String(yamlNode.next).startsWith('goto_')) {
+                const alarmCode = String(yamlNode.next).substring(5);
                 target = getGoToNode(alarmCode);
             } else {
                 target = yamlNode.next === 'end' ? getExitNode() : flowNodeMap.get(yamlNode.next);
@@ -547,8 +590,8 @@ const generateFlowFromYaml = (yamlData, files) => {
                 let target;
                 if (value === 'end') {
                     target = getExitNode(key);
-                } else if (String(value).startsWith('goto__')) {
-                    const alarmCode = String(value).substring(6);
+                } else if (String(value).startsWith('goto_')) {
+                    const alarmCode = String(value).substring(5);
                     target = getGoToNode(alarmCode);
                 } else {
                     target = flowNodeMap.get(value);
@@ -867,14 +910,14 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
 
         if (currentSelectedNodes.length === 0) {
             setNodes((nds) => nds.map((n) => ({ ...n, data: { ...n.data, isDimmed: false } })));
-            setEdges((eds) => eds.map((e) => ({ ...e, data: { ...e.data, isDimmed: false } })));
+            setEdges((eds) => eds.map((e) => ({ ...e, data: { ...e.data, isDimmed: false, isHighlighted: false } })));
             return;
         }
 
         const isStartNodeSelected = currentSelectedNodes.some(n => n.type === 'start');
         if (currentSelectedNodes.length === 1 && isStartNodeSelected) {
             setNodes((nds) => nds.map((n) => ({ ...n, data: { ...n.data, isDimmed: false } })));
-            setEdges((eds) => eds.map((e) => ({ ...e, data: { ...e.data, isDimmed: false } })));
+            setEdges((eds) => eds.map((e) => ({ ...e, data: { ...e.data, isDimmed: false, isHighlighted: false } })));
             return;
         }
 
@@ -913,7 +956,7 @@ const FlowDiagramComponent = forwardRef(({ onYamlChange, initialData, testedPath
         setEdges((eds) =>
             eds.map((e) => ({
                 ...e,
-                data: { ...e.data, isDimmed: !pathNodeIds.has(e.id) },
+                data: { ...e.data, isDimmed: !pathEdgeIds.has(e.id), isHighlighted: pathEdgeIds.has(e.id) },
             }))
         );
     }, [nodes, edges, setNodes, setEdges]);

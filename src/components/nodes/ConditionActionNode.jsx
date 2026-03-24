@@ -219,7 +219,7 @@ const ConditionActionNode = ({ id, data, selected }) => {
                 </div>
             )}
             {renderActionIcon()}
-            <NodeResizer isVisible={selected} minWidth={160} minHeight={120} keepAspectRatio lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} onResizeEnd={takeSnapshot} />
+            <NodeResizer isVisible={selected} minWidth={160} minHeight={120} lineStyle={{borderColor: 'var(--ring)', borderWidth: 2}} handleStyle={{backgroundColor: 'var(--ring)', width: 12, height: 12}} onResizeEnd={takeSnapshot} />
             <Handle type="target" position={Position.Top} style={{ background: 'var(--foreground)', width: 15, height: 15, borderRadius: '50%', border: '2px solid var(--card)' }} />
 
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} style={{
