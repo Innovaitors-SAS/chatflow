@@ -36,9 +36,10 @@ const CustomEdge = ({ id, source, target, sourceX, sourceY, sourcePosition, targ
         }
     };
 
+    const isHighlighted = data.isHighlighted && !data.isDimmed;
     const pathStyle = {
-        stroke: data.isTested ? 'var(--tested)' : (selected ? 'var(--ring)' : 'var(--foreground)'),
-        strokeWidth: selected ? 5 : 3,
+        stroke: data.isTested ? 'var(--tested)' : (selected || isHighlighted ? 'var(--ring)' : 'var(--foreground)'),
+        strokeWidth: selected ? 5 : (isHighlighted ? 4 : 3),
         fill: 'none',
         strokeDasharray: '7 7',
         opacity: data.isDimmed ? 0.3 : 1,
@@ -117,12 +118,13 @@ const CustomEdge = ({ id, source, target, sourceX, sourceY, sourcePosition, targ
                         label ? (
                             <div
                                 style={{
-                                    background: data.isTested ? 'var(--tested)' : 'var(--secondary)',
-                                    color: data.isTested ? 'var(--primary-foreground)' : 'var(--foreground)',
+                                    background: data.isTested ? 'var(--tested)' : (isHighlighted ? 'var(--ring)' : 'var(--secondary)'),
+                                    color: data.isTested ? 'var(--primary-foreground)' : (isHighlighted ? 'var(--primary-foreground)' : 'var(--foreground)'),
                                     padding: '4px 8px',
                                     borderRadius: 4,
-                                    border: '1px solid var(--border)',
+                                    border: isHighlighted ? '1px solid var(--ring)' : '1px solid var(--border)',
                                     fontSize: 12,
+                                    fontWeight: isHighlighted ? 'bold' : 'normal',
                                     cursor: isDecisionEdge ? 'default' : 'pointer',
                                     textAlign: 'center',
                                     transition: 'background-color 0.2s, color 0.2s'
