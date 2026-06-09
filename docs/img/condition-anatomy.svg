@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="640" height="300" viewBox="0 0 640 300" font-family="system-ui,Arial,sans-serif">
-  <rect width="640" height="300" rx="12" fill="#09090b"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="300" viewBox="0 0 820 300" font-family="system-ui,Arial,sans-serif">
+  <rect width="820" height="300" rx="12" fill="#09090b"/>
   <!-- nodo -->
   <rect x="40" y="36" width="300" height="220" rx="10" fill="#18181b" stroke="#fafafa" stroke-width="4"/>
   <circle cx="66" cy="62" r="13" fill="#27272a" stroke="#3f3f46"/>
@@ -13,17 +13,17 @@
   <text x="190" y="220" text-anchor="middle" fill="#a1a1aa" font-size="12">Action: <tspan fill="#fafafa" font-weight="700">Send File</tspan></text>
   <!-- callouts -->
   <g stroke="#8b5cf6" stroke-width="2" fill="none">
-    <path d="M340 104 H 470"/>
-    <path d="M340 170 H 470"/>
-    <path d="M340 220 H 470"/>
+    <path d="M340 104 H 466"/>
+    <path d="M340 170 H 466"/>
+    <path d="M340 220 H 466"/>
   </g>
   <g fill="#8b5cf6"><circle cx="340" cy="104" r="3"/><circle cx="340" cy="170" r="3"/><circle cx="340" cy="220" r="3"/></g>
-  <text x="482" y="92" fill="#fafafa" font-size="13" font-weight="700">1. Descripcion (text)</text>
-  <text x="482" y="110" fill="#a1a1aa" font-size="11">Mensaje al usuario. Detallado.</text>
-  <text x="482" y="126" fill="#a1a1aa" font-size="11">Incluye la condicion si es corta.</text>
-  <text x="482" y="162" fill="#fafafa" font-size="13" font-weight="700">2. Condicion (condition)</text>
-  <text x="482" y="180" fill="#a1a1aa" font-size="11">La pregunta. Sus respuestas son</text>
-  <text x="482" y="196" fill="#a1a1aa" font-size="11">las opciones de la decision.</text>
-  <text x="482" y="232" fill="#fafafa" font-size="13" font-weight="700">3. Accion (action)</text>
-  <text x="482" y="250" fill="#a1a1aa" font-size="11">None / Send File / Create Ticket</text>
+  <text x="480" y="100" fill="#fafafa" font-size="13" font-weight="700">1. Descripcion (text)</text>
+  <text x="480" y="120" fill="#a1a1aa" font-size="11.5">Mensaje al usuario. Lo mas detallado posible;</text>
+  <text x="480" y="137" fill="#a1a1aa" font-size="11.5">incluye la condicion si es muy corta.</text>
+  <text x="480" y="166" fill="#fafafa" font-size="13" font-weight="700">2. Condicion (condition)</text>
+  <text x="480" y="186" fill="#a1a1aa" font-size="11.5">La pregunta. Sus respuestas son exactamente</text>
+  <text x="480" y="203" fill="#a1a1aa" font-size="11.5">las opciones del nodo de Decision.</text>
+  <text x="480" y="232" fill="#fafafa" font-size="13" font-weight="700">3. Accion (action)</text>
+  <text x="480" y="252" fill="#a1a1aa" font-size="11.5">None / Send File / Create Ticket</text>
 </svg>
