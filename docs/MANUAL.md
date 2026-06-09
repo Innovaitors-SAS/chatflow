@@ -45,7 +45,7 @@ El código de Start define el `id` y la `description` del grafo en el YAML
 
 ### 2.2 Condición — *Condition*
 
-![Anatomía del nodo de condición](img/condition-anatomy.svg)
+![Anatomía del nodo de condición](img/node-condition-parts.svg)
 
 Es el **nodo de trabajo** del flujo: muestra un mensaje al usuario y, normalmente,
 hace una pregunta. Tiene **tres partes** (doble clic en el nodo para editarlas):

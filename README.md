@@ -34,7 +34,7 @@ El patrón base se repite a lo largo de todo el flujo:
 
 ### El nodo de condición tiene 3 partes
 
-![Anatomía del nodo de condición](docs/img/condition-anatomy.svg)
+![Anatomía del nodo de condición](docs/img/node-condition-parts.svg)
 
 ### Reglas de oro
 
