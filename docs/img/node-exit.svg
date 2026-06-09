@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="170" viewBox="0 0 220 170" font-family="system-ui,Arial,sans-serif">
+  <rect width="220" height="170" rx="12" fill="#09090b"/>
+  <circle cx="110" cy="85" r="58" fill="#18181b" stroke="#fafafa" stroke-width="4"/>
+  <text x="110" y="82" text-anchor="middle" fill="#fafafa" font-size="15" font-weight="700">Exit</text>
+  <text x="110" y="102" text-anchor="middle" fill="#a1a1aa" font-size="12">Fin del flujo</text>
+</svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="180" viewBox="0 0 240 180" font-family="system-ui,Arial,sans-serif">
+  <rect width="240" height="180" rx="12" fill="#09090b"/>
+  <circle cx="120" cy="90" r="64" fill="#18181b" stroke="#fafafa" stroke-width="4"/>
+  <text x="120" y="86" text-anchor="middle" fill="#fafafa" font-size="16" font-weight="700" letter-spacing="1">START</text>
+  <text x="120" y="108" text-anchor="middle" fill="#a1a1aa" font-size="12">Alarma 1019</text>
+</svg>

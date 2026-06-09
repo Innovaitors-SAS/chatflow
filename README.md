@@ -11,6 +11,46 @@ desplegable que incluye el flujo y sus archivos de apoyo (PDF, imágenes, video)
 
 ---
 
+## 📘 Manual de uso
+
+¿Vas a construir o editar un flujo de alarma? Lee el **[Manual de uso de Chatflow](docs/MANUAL.md)**
+— también disponible en **[PDF](docs/Manual-Chatflow.pdf)**. Explica con imágenes cada tipo de
+nodo, qué se llena en cada uno y las reglas para que el flujo funcione bien en el chatbot.
+
+El patrón base se repite a lo largo de todo el flujo:
+`Start → Condition → Decision → (una rama por opción) → Condition → ...`
+
+![Flujo de ejemplo](docs/img/flow-example.svg)
+
+### Tipos de nodo
+
+| Nodo | Representa | Qué se llena |
+|------|-----------|--------------|
+| <img src="docs/img/node-start.svg" width="120"> **Start** | Inicio del flujo (uno por alarma) | Código de alarma (4 dígitos) y tipo |
+| <img src="docs/img/node-condition.svg" width="150"> **Condition** | Mensaje + pregunta al usuario | Descripción, Condición (la pregunta) y Acción |
+| <img src="docs/img/node-decision.svg" width="110"> **Decision** | Las respuestas a la condición anterior | Opciones (Sí/No, numéricas…) |
+| <img src="docs/img/node-exit.svg" width="110"> **Exit** | Fin de un camino | — (se vuelve `next: "end"`) |
+| <img src="docs/img/node-goto.svg" width="120"> **Go To** | Salto a otra alarma | Código de alarma destino (4 dígitos) |
+
+### El nodo de condición tiene 3 partes
+
+![Anatomía del nodo de condición](docs/img/condition-anatomy.svg)
+
+### Reglas de oro
+
+1. **Cada rama de una Decisión va a un nodo de Condición.**
+2. **El campo *Condición* contiene la pregunta cuyas respuestas son exactamente las opciones**
+   de la Decisión que sigue.
+3. **La *Descripción* debe ser lo más detallada posible**; si es muy corta, incluye también la
+   pregunta dentro de la descripción. Evita nodos con descripción vacía.
+4. **Cierra todos los caminos** con un mensaje final (acción *Create Ticket*) seguido de un nodo **Exit**.
+5. **Un nodo de Condición tiene una sola salida** hacia Decisión, Exit o Go To.
+
+> El editor marca con un `!` amarillo los nodos mal configurados. Consulta el
+> [manual completo](docs/MANUAL.md) para el detalle de validaciones, acciones, exportación y buenas prácticas.
+
+---
+
 ## 1. Stack técnico
 
 | Capa | Tecnología | Versión |

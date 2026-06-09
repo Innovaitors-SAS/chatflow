@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="240" viewBox="0 0 340 240" font-family="system-ui,Arial,sans-serif">
+  <rect width="340" height="240" rx="12" fill="#09090b"/>
+  <rect x="24" y="20" width="292" height="200" rx="10" fill="#18181b" stroke="#fafafa" stroke-width="4"/>
+  <circle cx="48" cy="44" r="13" fill="#27272a" stroke="#3f3f46"/>
+  <path d="M44 38 h6 l4 4 v8 h-10 z" fill="none" stroke="#fafafa" stroke-width="1.5"/>
+  <text x="170" y="50" text-anchor="middle" fill="#fafafa" font-size="15" font-weight="700">Condition</text>
+  <text x="170" y="84" text-anchor="middle" fill="#a1a1aa" font-size="12">Verifique la presion de agua de camisas</text>
+  <text x="170" y="102" text-anchor="middle" fill="#a1a1aa" font-size="12">en el DIANE XT4 y comparela con el manometro.</text>
+  <rect x="44" y="128" width="252" height="40" rx="5" fill="#27272a" stroke="#3f3f46"/>
+  <text x="170" y="153" text-anchor="middle" fill="#fafafa" font-size="12.5" font-family="'JetBrains Mono',monospace">¿La presion esta por debajo de 2 bar?</text>
+  <text x="170" y="194" text-anchor="middle" fill="#a1a1aa" font-size="12">Action: <tspan fill="#fafafa" font-weight="700">Send File</tspan></text>
+</svg>

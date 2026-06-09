@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240" font-family="system-ui,Arial,sans-serif">
+  <rect width="240" height="240" rx="12" fill="#09090b"/>
+  <rect x="62" y="62" width="116" height="116" rx="8" fill="#18181b" stroke="#fafafa" stroke-width="4" transform="rotate(45 120 120)"/>
+  <text x="120" y="100" text-anchor="middle" fill="#fafafa" font-size="14" font-weight="700">Decision</text>
+  <rect x="98" y="112" width="44" height="20" rx="4" fill="#27272a"/>
+  <text x="120" y="126" text-anchor="middle" fill="#fafafa" font-size="12">Si</text>
+  <rect x="98" y="138" width="44" height="20" rx="4" fill="#27272a"/>
+  <text x="120" y="152" text-anchor="middle" fill="#fafafa" font-size="12">No</text>
+</svg>
