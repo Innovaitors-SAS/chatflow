@@ -21,8 +21,7 @@ de modelado que debe cumplir un flujo para interpretarse correctamente en el cha
 7. [Traducción a YAML](#7-traducción-a-yaml)
 8. [Exportar, importar y desplegar](#8-exportar-importar-y-desplegar)
 9. [Simulador de chat](#9-simulador-de-chat)
-10. [Recomendaciones y errores frecuentes](#10-recomendaciones-y-errores-frecuentes)
-11. [Apéndice: patrones en flujos reales](#apéndice-patrones-en-flujos-reales)
+10. [Recomendaciones de uso](#10-recomendaciones-de-uso)
 
 ---
 
@@ -135,9 +134,9 @@ Un flujo válido —que el chatbot interpreta correctamente— cumple estas regl
    (*"¿La presión está por debajo de 2 bar?"*). Si la Decisión es numérica, la condición
    enumera o pregunta por esas opciones.
 
-3. **La Descripción debe ser detallada.** Incluye instrucciones, valores, ubicaciones y
-   contactos. Si la descripción es corta, agrega la pregunta dentro de ella para que el
-   mensaje quede completo. Un nodo con descripción vacía deja al usuario sin contexto.
+3. **La Descripción es el texto que el chatbot muestra en ese paso.** Puede contener
+   instrucciones, valores, ubicaciones y contactos. Es opcional: en pasos donde la pregunta
+   de la Decisión (Sí/No o numérica) ya es suficiente, la descripción puede quedar vacía.
 
 4. **Todos los caminos se cierran.** Cada rama termina en un mensaje final con la acción
    *Create Ticket* seguido de un nodo Exit, o en un Go To si el caso continúa en otra
@@ -277,38 +276,17 @@ final correcto antes de exportar.
 
 ---
 
-## 10. Recomendaciones y errores frecuentes
+## 10. Recomendaciones de uso
 
-Prácticas recomendadas:
+Pautas para aprovechar las funciones del editor:
 
-- Descripciones detalladas; si son cortas, incluye la pregunta dentro de la descripción.
-- Condiciones redactadas como preguntas (terminan en `?`).
-- Opciones de Decisión cortas y distintas; Sí/No por defecto y numéricas para menús.
-- Cada camino cerrado con mensaje final, *Create Ticket* y Exit.
+- Redacta las condiciones como preguntas, de modo que coincidan con las opciones de la
+  Decisión que sigue (Sí/No o numéricas).
+- Usa opciones de Decisión cortas y distintas entre sí: Sí/No para preguntas binarias y
+  numéricas para menús.
+- Adjunta con *Send File* el manual, diagrama o instrucción técnica que apoya ese paso.
+- Cierra cada camino con un mensaje final y, cuando corresponda, *Create Ticket* y un nodo
+  Exit.
+- Usa el simulador de chat para recorrer el flujo y verificar que todas las ramas llegan a
+  un final antes de exportar.
 
-Errores frecuentes (detectados en flujos reales):
-
-- Nodos con descripción vacía: se encontraron 340 en los flujos existentes, que dejan al
-  usuario sin contexto.
-- Opciones sin renombrar, como `option_1` u `option_2`.
-- Decisiones con una sola opción, que no constituyen una decisión real.
-- Una Condición conectada directamente a otra Condición, sin Decisión, Exit o Go To en
-  medio.
-- Caminos sin cierre, sin Exit ni ticket final.
-
----
-
-## Apéndice: patrones en flujos reales
-
-Datos de los 27 flujos analizados:
-
-- 27 alarmas y 1.191 nodos, con un promedio de 44 nodos por flujo.
-- 773 decisiones; el 93 % son Sí/No (714) y el resto numéricas, con menús de 2 a 8
-  opciones.
-- El 89 % de las condiciones están redactadas como pregunta (terminan en `?`).
-- Acciones: 623 sin acción, 299 *Create Ticket* y 269 *Send File*.
-- Finales: 389 ramas terminan en `next: end`; Go To se usa poco, solo para casos puntuales
-  de continuidad entre alarmas.
-- Descripciones: longitud media de 176 caracteres, mediana de 142. Hay 340 nodos sin
-  descripción, que representan la principal oportunidad de mejora.
-</content>
