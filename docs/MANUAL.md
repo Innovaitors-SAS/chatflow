@@ -219,13 +219,53 @@ Equivalencias:
 
 ## 8. Exportar, importar y desplegar
 
-- **Exportar ZIP:** genera `alarma<CÓDIGO>.zip` con el flujo (`alarma<CÓDIGO>.yml`), las
-  posiciones de los nodos (`graph_layout_metadata.json`) y la carpeta `extra_metadata/`
-  con los archivos adjuntos. Esta es la versión que se despliega.
+- **Exportar ZIP:** genera `<CÓDIGO>.zip` (p. ej. `1022.zip`) con el flujo
+  (`alarma<CÓDIGO>.yml`), las posiciones de los nodos (`graph_layout_metadata.json`) y la
+  carpeta `extra_metadata/` con los archivos adjuntos. Esta es la versión que se despliega.
 - **Importar ZIP:** vuelve a cargar un flujo existente para seguir editándolo; reconstruye
   nodos, posiciones y archivos.
-- **Desplegar:** entrega el `.zip` al script `deploy_alarmas.sh`, que sube el contenido a
-  `s3://pegsa-chatbot/Flujos/<CÓDIGO>/` y actualiza el índice del chatbot.
+
+### 8.1 Desplegar el ZIP con `deploy_alarmas.sh`
+
+El ZIP que produce Chatflow es **directamente desplegable**: no hay que editarlo, descomprimirlo
+ni renombrar nada. El archivo `alarma<CÓDIGO>.yml` ya incluye, al final y comentado tras la
+línea `# ---`, el bloque de índice (`file_name`, `alarm_type`, `extra_metadata`) que el script
+necesita; Chatflow lo genera automáticamente al exportar.
+
+**Requisitos del ZIP** (los cumple el export de Chatflow tal cual):
+
+- El nombre debe ser el **código numérico** de la alarma: `<CÓDIGO>.zip` (p. ej. `1022.zip`).
+  El script rechaza nombres que no sean numéricos.
+- Contiene `alarma<CÓDIGO>.yml` con el bloque `# ---` al final.
+- Carpeta `extra_metadata/` con los adjuntos referenciados por las acciones *Send File*.
+
+**Uso del script:**
+
+```bash
+deploy-alarmas 1022            # una alarma por código (busca ./1022.zip)
+deploy-alarmas ruta/1022.zip   # una alarma por ruta
+deploy-alarmas                 # procesa TODOS los *.zip del directorio actual
+```
+
+**Qué hace por cada ZIP** (todo por SSH al servidor; los datos de alarmas viven en S3, no en
+el servidor):
+
+1. Copia el ZIP al servidor y lo descomprime en un directorio temporal.
+2. Extrae y descomenta el bloque de índice (`# ---`) del `alarma<CÓDIGO>.yml`.
+3. Compara `extra_metadata/` contra lo que ya hay en S3 y reporta los cambios:
+   `+` archivo nuevo, `-` sin cambios, `x` eliminado (estaba en S3 pero ya no en el ZIP).
+4. Reemplaza la carpeta `s3://pegsa-chatbot/Flujos/<CÓDIGO>/` con el contenido del ZIP.
+5. Inserta o reemplaza el bloque `"<CÓDIGO>":` dentro de `Alarms:` en el `data/index.yaml`
+   del servidor, con backup previo y validación del YAML resultante (si queda inválido,
+   restaura el backup automáticamente).
+6. Cuando termina todas las alarmas, recarga el bot (`docker compose` de `whatsapp-app` y
+   `chatbot_pegsa`) para que tome los cambios.
+
+Cada corrida deja un resumen de los cambios en el log local `deploy_alarmas.log`.
+
+> **En resumen:** exportas el ZIP en Chatflow → `deploy-alarmas <código>` → el bot queda
+> actualizado. No se editan a mano los archivos de alarmas del servidor; el chatbot siempre
+> lee desde S3.
 
 ---
 
