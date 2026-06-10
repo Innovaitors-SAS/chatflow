@@ -1,5 +1,8 @@
 # Chatflow — Editor visual de flujos de alarmas PEGSA
 
+[![Manual de uso](https://img.shields.io/badge/Manual%20de%20uso-leer-2563eb?style=for-the-badge&logo=readthedocs&logoColor=white)](docs/MANUAL.md)
+[![Manual en PDF](https://img.shields.io/badge/Manual-PDF-ef4444?style=for-the-badge&logo=adobeacrobatreader&logoColor=white)](docs/Manual-Chatflow.pdf)
+
 Chatflow es una aplicación web de una sola página (SPA) para diseñar los flujos de
 troubleshooting de las alarmas PEGSA y exportarlos como archivos YAML que consume el
 [chatbot de soporte técnico](https://github.com/Innovaitors-SAS/chatbot-soporte-tecnico-pegsa).
